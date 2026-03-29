@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan de Intervenție Oficial | Cristina Pîslariu</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;700&family=Dancing+Script:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        .word-container { 
+            padding: 2rem 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            background-color: #e0e0e0; 
+            min-height: 100vh; 
+            font-family: 'Times New Roman', Times, serif; 
+        }
+        
+        .paper { 
+            background: white; 
+            width: 210mm; 
+            min-height: 297mm; 
+            padding: 20mm; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.2); 
+            color: #000; 
+            position: relative; 
+        }
+
+        /* Antet */
+        .doc-header-top { 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 14px; 
+            line-height: 1.3; 
+            margin-bottom: 40px; 
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .doc-title-section { text-align: center; margin-bottom: 5px; }
+        .doc-title-section h1 { font-size: 26px; font-weight: bold; text-transform: uppercase; }
+
+        .doc-date-cursive { 
+            font-family: 'Dancing Script', cursive; 
+            font-size: 22px; 
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* Date beneficiar (Vertical) */
+        .info-list-vertical { margin-bottom: 30px; }
+
+        .info-group-title {
+            font-family: 'Dancing Script', cursive;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: block;
+            border-bottom: 1px solid #000;
+            width: fit-content;
+        }
+
+        .info-line { 
+            margin-bottom: 12px; 
+            font-size: 16px; 
+            font-weight: bold; 
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            width: 100%;
+        }
+        
+        .info-line span { 
+            font-weight: normal; 
+            border-bottom: 1px dotted #999; 
+            padding-left: 8px; 
+            flex: 1; 
+            min-width: 200px; 
+            display: inline-block; 
+            word-break: break-word;
+        }
+
+        .document-content { 
+            margin-top: 20px; 
+            border-top: 1px solid #000; 
+            padding-top: 20px; 
+            line-height: 1.8; 
+            min-height: 400px; 
+            font-size: 17px;
+            text-align: justify;
+        }
+
+        /* Bara de unelte (Stil unitar pentru ambii) */
+        .toolbar { 
+            position: sticky; top: 0; z-index: 100; background: #f8f9fa; 
+            width: 100%; padding: 10px; display: flex; justify-content: center; 
+            gap: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 10px;
+            font-family: 'Quicksand', sans-serif;
+        }
+        .btn-action { padding: 8px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-family: 'Quicksand'; transition: 0.3s; }
+        .btn-save { background: #2e7d32; color: white; }
+        .btn-print { background: #6b8e23; color: white; }
+        .btn-print:hover { opacity: 0.8; }
+
+        .edit-mode-active .editable-field { background-color: #fffdf0; outline: 1px dashed #ccc; }
+
+        header { font-family: 'Quicksand', sans-serif; width: 100%; }
+
+        @media print { 
+            .toolbar, header { display: none !important; } 
+            .word-container { padding: 0; background: none; }
+            .paper { box-shadow: none; margin: 0; width: 100%; }
+            .edit-mode-active .editable-field { background: none !important; outline: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <header id="siteHeader">
+        <nav class="main-nav">
+            <ul>
+                <li><a href="index.html">Acasă</a></li>
+                <li id="backToAdmin" style="display:none;"><a href="fisa-notare.html">⬅ Înapoi la listă</a></li>
+                <li><a href="javascript:void(0)" onclick="logout()" style="color: #a47373;">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="word-container" id="mainContainer">
+        <div class="toolbar" id="mainToolbar">
+            <button id="btnSave" class="btn-action btn-save" style="display:none;" onclick="saveFullDocument()">💾 Salvează modificările</button>
+            
+            <button class="btn-action btn-print" onclick="window.print()">🖨️ PDF / Printează Planul</button>
+        </div>
+
+        <article class="paper" id="editablePaper">
+            <div class="doc-header-top">
+                <div class="header-left editable-field">
+                    <strong>Cristina Pîslariu-Cabinet individual de psihologie</strong><br>
+                    Str. Ion Creangă, nr 1, Fălticeni, Suceava<br>
+                    CIF: 54275086
+                </div>
+                <div class="header-right editable-field">
+                    Contact:<br>
+                    Telefon: 0735 101 358<br>
+                    Email: cipislariucristina@gmail.com
+                </div>
+            </div>
+
+            <div class="doc-title-section">
+                <h1 class="editable-field">Plan de intervenție</h1>
+            </div>
+            <div class="doc-date-cursive">
+                data: <span id="currentDate" class="editable-field">..........</span>
+            </div>
+
+            <div class="info-list-vertical">
+                <span class="info-group-title editable-field">Date personale:</span>
+                
+                <div class="info-line">Nume copil: <span id="childName" class="editable-field">..........</span></div>
+                <div class="info-line">Data nașterii: <span id="childBirth" class="editable-field">..........</span></div>
+                <div class="info-line">CNP: <span id="childCNP" class="editable-field">..........</span></div>
+                <div class="info-line">Persoane de contact: <span id="childContact" class="editable-field">..........</span></div>
+                <div class="info-line">Instituția frecventată: <span id="childInst" class="editable-field">..........</span></div>
+                <div class="info-line">Diagnostic(e): <span id="childDiag" class="editable-field">..........</span></div>
+                <div class="info-line">Tratament medicamentos: <span id="childMeds" class="editable-field">..........</span></div>
+                <div class="info-line">Alte afecțiuni asociate: <span id="childOther" class="editable-field">..........</span></div>
+                <div class="info-line">Alergii / condiții speciale: <span id="childAllergies" class="editable-field">..........</span></div>
+            </div>
+
+            <div class="document-content editable-field" id="mainReportContent">
+                <p><strong>Obiective și recomandări:</strong></p>
+                <p>Introduceți aici detaliile...</p>
+            </div>
+        </article>
+    </main>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const childId = urlParams.get('id');
+        const isEditMode = urlParams.get('edit') === 'true';
+        const role = localStorage.getItem("userRole");
+        const userEmail = localStorage.getItem("userEmail");
+
+        window.onload = function() {
+            const patients = JSON.parse(localStorage.getItem("patients") || "[]");
+            let currentChild;
+
+            if (isEditMode && role === 'psiholog') {
+                currentChild = patients[childId];
+                document.getElementById("btnSave").style.display = "block";
+                document.getElementById("backToAdmin").style.display = "inline-block";
+                enableFullEdit();
+            } else {
+                currentChild = patients.find(p => p.email === userEmail);
+            }
+
+            if (currentChild) {
+                const index = patients.indexOf(currentChild);
+                const savedFullDoc = localStorage.getItem(`full_doc_${index}`);
+                
+                if (savedFullDoc) {
+                    document.getElementById("editablePaper").innerHTML = savedFullDoc;
+                    // Reactivăm editarea doar dacă e psihologul
+                    if(isEditMode && role === 'psiholog') {
+                        document.querySelectorAll('.editable-field').forEach(f => f.contentEditable = "true");
+                    }
+                } else {
+                    document.getElementById("childName").innerText = currentChild.name;
+                    document.getElementById("currentDate").innerText = new Date().toLocaleDateString('ro-RO');
+                }
+            }
+        };
+
+        function enableFullEdit() {
+            document.getElementById("mainContainer").classList.add("edit-mode-active");
+            document.querySelectorAll('.editable-field').forEach(f => f.contentEditable = "true");
+        }
+
+        function saveFullDocument() {
+            const fields = document.querySelectorAll('.editable-field');
+            fields.forEach(f => f.contentEditable = "false");
+            const htmlToSave = document.getElementById("editablePaper").innerHTML;
+            localStorage.setItem(`full_doc_${childId}`, htmlToSave);
+            showToast("Planul a fost salvat cu succes!");
+            fields.forEach(f => f.contentEditable = "true");
+        }
+
+        function logout() { localStorage.clear(); window.location.href = "index.html"; }
+    </script>
+</body>
+</html>

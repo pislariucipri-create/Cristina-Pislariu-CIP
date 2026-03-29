@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact | Cristina Pîslariu</title>
+    <link rel="stylesheet" href="style.css"> <style>
+        body {
+            background-color: #f9f7f2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Quicksand', sans-serif;
+        }
+
+        /* Containerul principal pentru perspectivă 3D */
+        .card-container {
+            width: 500px;
+            height: 300px;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        /* Elementul care se rotește */
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border-radius: 15px;
+        }
+
+        /* Clasa care declanșează rotația */
+        .card-container.is-flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        /* Fețele cărții de vizită */
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden; /* Pentru Safari */
+            backface-visibility: hidden;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .card-front img, .card-back img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Partea din spate trebuie rotită din start */
+        .card-back {
+            transform: rotateY(180deg);
+        }
+
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            text-decoration: none;
+            color: #a47373;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-link">← Înapoi la site</a>
+
+    <div class="card-container" onclick="this.classList.toggle('is-flipped')">
+        <div class="card-inner">
+            <div class="card-front">
+                <img src="fata-card.jpg" alt="Față Carte de Vizită">
+            </div>
+            <div class="card-back">
+                <img src="spate-card.jpg" alt="Spate Carte de Vizită">
+            </div>
+        </div>
+    </div>
+
+    <p style="position: absolute; bottom: 50px; color: #888;">Apasă pe card pentru a-l întoarce</p>
+
+</body>
+</html>

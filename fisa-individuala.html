@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fișă Monitorizare | Notare Rapidă</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .excel-container { padding: 2rem 2%; overflow-x: auto; }
+        .controls { margin-bottom: 20px; display: flex; gap: 10px; }
+        .excel-table { width: 100%; border-collapse: collapse; background: white; min-width: 1000px; }
+        .excel-table th, .excel-table td { border: 1px solid #ccc; padding: 12px 8px; text-align: center; vertical-align: middle; }
+        
+        /* Stil celulă cu butoane */
+        .score-cell { min-width: 120px; }
+        .btn-group { display: flex; justify-content: center; gap: 4px; margin-bottom: 5px; }
+        .btn-score { 
+            width: 25px; height: 25px; border: 1px solid #ddd; 
+            border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;
+            display: flex; align-items: center; justify-content: center; transition: 0.2s;
+        }
+        .btn-minus { background: #fee; color: #c33; }
+        .btn-p { background: #fff4e5; color: #d68100; }
+        .btn-plus { background: #e8f5e9; color: #2e7d32; }
+        .btn-score:hover { transform: scale(1.1); filter: brightness(0.9); }
+        
+        .score-display { 
+            font-family: monospace; font-size: 14px; letter-spacing: 1px; 
+            min-height: 1.2em; border-top: 1px dashed #eee; padding-top: 3px;
+        }
+
+        /* Marcaj Obiectiv Completat */
+        .completed-row { background-color: #c8e6c9 !important; transition: background 0.5s; }
+        .completed-row td { border-color: #81c784; }
+
+        .cat-select { width: 100%; border: none; background: #f9f9f9; padding: 5px; cursor: pointer; }
+        .btn-tool { padding: 8px 12px; border-radius: 5px; border: 1px solid var(--verde-sage); background: white; color: var(--verde-sage); cursor: pointer; font-weight: bold; }
+        .btn-tool:hover { background: var(--verde-sage); color: white; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <nav class="main-nav">
+            <ul>
+                <li><a href="fisa-notare.html">← Înapoi</a></li>
+                <li id="displayChildName" style="font-weight: bold; color: var(--verde-sage);"></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="excel-container">
+        <div class="controls">
+            <button class="btn-tool" onclick="addRow()">+ Adaugă Obiectiv</button>
+            <button class="btn-tool" onclick="addTodayColumn()">+ Adaugă Coloană (Azi)</button>
+        </div>
+
+        <table class="excel-table" id="excelTable">
+            <thead>
+                <tr id="headerRow">
+                    <th style="width:50px">Nr.</th>
+                    <th style="width:250px">Obiectiv</th>
+                    <th style="width:180px">Categorie</th>
+                    <th style="width:200px">Observații</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+
+        <button class="btn-cta" style="position:fixed; bottom:20px; right:20px;" onclick="saveAll()">Salvează Tot</button>
+    </main>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const childId = urlParams.get('id');
+        const patients = JSON.parse(localStorage.getItem("patients") || "[]");
+        const currentChild = patients[childId];
+        let categories = JSON.parse(localStorage.getItem(`categories_${childId}`)) || ["Limbaj", "Cognitiv", "Motricitate"];
+
+        if (!currentChild) window.location.href = "fisa-notare.html";
+        document.getElementById("displayChildName").innerText = "Fișă: " + currentChild.name;
+
+        // --- LOGICA DE NOTARE ---
+        function addScore(btn, type) {
+            const display = btn.parentElement.nextElementSibling;
+            display.innerText += type;
+            checkCompletion(btn.closest('tr'));
+        }
+
+        function checkCompletion(row) {
+            let totalSuccess = 0;
+            // Căutăm în toate celulele de scor (de la indexul 4 încolo)
+            const scoreDisplays = row.querySelectorAll('.score-display');
+            scoreDisplays.forEach(display => {
+                const text = display.innerText;
+                // Numărăm câți de + și P sunt în total pe acest rând
+                const pluses = (text.match(/\+/g) || []).length;
+                const ps = (text.match(/P/g) || []).length;
+                totalSuccess += (pluses + ps);
+            });
+
+            if (totalSuccess >= 5) {
+                row.classList.add('completed-row');
+            } else {
+                row.classList.remove('completed-row');
+            }
+        }
+
+        function createScoreCellContent(existingValue = "") {
+            return `
+                <div class="btn-group">
+                    <button class="btn-score btn-minus" onclick="addScore(this, '-')">-</button>
+                    <button class="btn-score btn-p" onclick="addScore(this, 'P')">P</button>
+                    <button class="btn-score btn-plus" onclick="addScore(this, '+')">+</button>
+                </div>
+                <div class="score-display">${existingValue}</div>
+            `;
+        }
+
+        // --- GESTIUNE TABEL ---
+        function addRow() {
+            const tbody = document.getElementById("tableBody");
+            const nr = tbody.rows.length + 1;
+            const row = tbody.insertRow();
+            
+            row.innerHTML = `
+                <td>${nr}</td>
+                <td contenteditable="true" style="text-align:left">Obiectiv nou</td>
+                <td><select class="cat-select" onchange="handleCategoryChange(event)"></select></td>
+                <td contenteditable="true"></td>
+            `;
+            
+            const headerCells = document.getElementById("headerRow").cells.length;
+            for(let i=4; i<headerCells; i++) {
+                let cell = row.insertCell();
+                cell.className = "score-cell";
+                cell.innerHTML = createScoreCellContent();
+            }
+            populateDropdown(row.querySelector(".cat-select"));
+        }
+
+        function addTodayColumn() {
+            const now = new Date();
+            const dateStr = now.getDate().toString().padStart(2, '0') + "." + (now.getMonth() + 1).toString().padStart(2, '0');
+            const header = document.getElementById("headerRow");
+            const th = document.createElement("th");
+            th.contentEditable = "true";
+            th.innerText = dateStr;
+            header.appendChild(th);
+
+            const tbody = document.getElementById("tableBody");
+            for (let i = 0; i < tbody.rows.length; i++) {
+                let cell = tbody.rows[i].insertCell();
+                cell.className = "score-cell";
+                cell.innerHTML = createScoreCellContent();
+            }
+        }
+
+        // --- CATEGORII ---
+        function populateDropdown(selectElement) {
+            const currentSelected = selectElement.value;
+            selectElement.innerHTML = "";
+            categories.forEach(cat => {
+                let opt = document.createElement("option");
+                opt.value = cat; opt.innerText = cat;
+                if(cat === currentSelected) opt.selected = true;
+                selectElement.appendChild(opt);
+            });
+            selectElement.innerHTML += `<option disabled>──────────</option>
+                                       <option value="ACTION_ADD" style="color:green">+ Adaugă...</option>
+                                       <option value="ACTION_DELETE" style="color:red">- Șterge...</option>`;
+        }
+
+        function handleCategoryChange(event) {
+            const select = event.target;
+            if (select.value === "ACTION_ADD") {
+                const n = prompt("Nume categorie:");
+                if (n) { categories.push(n); saveCategories(); refreshAllDropdowns(); select.value = n; }
+            } else if (select.value === "ACTION_DELETE") {
+                const d = prompt("Șterge categoria:");
+                if (d) { categories = categories.filter(c => c !== d); saveCategories(); refreshAllDropdowns(); }
+            }
+        }
+
+        function saveCategories() { localStorage.setItem(`categories_${childId}`, JSON.stringify(categories)); }
+        function refreshAllDropdowns() { document.querySelectorAll(".cat-select").forEach(sel => populateDropdown(sel)); }
+
+        // --- SALVARE ȘI ÎNCĂRCARE ---
+        function saveAll() {
+            const rowsData = [];
+            const headerData = Array.from(document.getElementById("headerRow").cells).map(c => c.innerText);
+            
+            for (let row of document.getElementById("tableBody").rows) {
+                const rowCells = [];
+                for (let i = 0; i < row.cells.length; i++) {
+                    if (i === 2) rowCells.push(row.cells[i].querySelector("select").value);
+                    else if (i >= 4) rowCells.push(row.cells[i].querySelector(".score-display").innerText);
+                    else rowCells.push(row.cells[i].innerText);
+                }
+                rowsData.push(rowCells);
+            }
+            localStorage.setItem(`fisa_data_v4_${childId}`, JSON.stringify({ header: headerData, body: rowsData }));
+            showToast("Toate datele au fost salvate!");
+        }
+
+        window.onload = function() {
+            const saved = localStorage.getItem(`fisa_data_v4_${childId}`);
+            if (saved) {
+                const data = JSON.parse(saved);
+                const header = document.getElementById("headerRow");
+                header.innerHTML = "";
+                data.header.forEach((t, i) => {
+                    let th = document.createElement("th"); th.innerText = t;
+                    if(i > 3) th.contentEditable = "true";
+                    header.appendChild(th);
+                });
+
+                const tbody = document.getElementById("tableBody");
+                data.body.forEach(rowData => {
+                    let row = tbody.insertRow();
+                    rowData.forEach((cellData, i) => {
+                        let cell = row.insertCell();
+                        if (i === 2) {
+                            cell.innerHTML = `<select class="cat-select" onchange="handleCategoryChange(event)"></select>`;
+                            populateDropdown(cell.querySelector("select"));
+                            cell.querySelector("select").value = cellData;
+                        } else if (i >= 4) {
+                            cell.className = "score-cell";
+                            cell.innerHTML = createScoreCellContent(cellData);
+                        } else {
+                            cell.innerText = cellData;
+                            if (i !== 0) cell.contentEditable = "true";
+                        }
+                    });
+                    checkCompletion(row); // Verifică la încărcare dacă e verde
+                });
+            }
+        };
+    </script>
+</body>
+</html>

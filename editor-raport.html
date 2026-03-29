@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <title>Editor Raport | Cristina Pîslariu</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .editor-container { padding: 3rem 10%; max-width: 900px; margin: auto; }
+        textarea { 
+            width: 100%; height: 400px; padding: 20px; 
+            border-radius: 10px; border: 1px solid #ccc; 
+            font-family: 'Times New Roman', serif; font-size: 1.1rem; 
+            margin-top: 20px; resize: vertical;
+        }
+        .header-editor { display: flex; justify-content: space-between; align-items: center; }
+        .btn-save { background: #6b8e23; color: white; padding: 10px 25px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="editor-container">
+        <div class="header-editor">
+            <h1 id="editorTitle">Scrie Raport pentru: ...</h1>
+            <button class="btn-save" onclick="saveReport()">✅ Salvează și Trimite</button>
+        </div>
+        <p>Introdu aici observațiile, obiectivele și recomandările. Părintele le va vedea imediat în secțiunea "Plan de intervenție".</p>
+        <textarea id="reportTextArea" placeholder="Începe să scrii aici..."></textarea>
+        <br><br>
+        <a href="fisa-notare.html">⬅ Înapoi la listă fără a salva</a>
+    </div>
+
+    <script>
+        // Luăm ID-ul copilului din URL (?id=0, ?id=1 etc.)
+        const urlParams = new URLSearchParams(window.location.search);
+        const childId = urlParams.get('id');
+        const patients = JSON.parse(localStorage.getItem("patients") || "[]");
+        const child = patients[childId];
+
+        if (!child) {
+            showToast("Eroare: Copilul nu a fost găsit!", "❌");
+            window.location.href = "fisa-notare.html";
+        }
+
+        document.getElementById("editorTitle").innerText = "Scrie Raport pentru: " + child.name;
+
+        // Încărcăm raportul existent dacă există
+        const savedContent = localStorage.getItem(`report_${childId}`);
+        if (savedContent) {
+            document.getElementById("reportTextArea").value = savedContent;
+        }
+
+        function saveReport() {
+            const content = document.getElementById("reportTextArea").value;
+            // Salvăm raportul folosind ID-ul unic al copilului
+            localStorage.setItem(`report_${childId}`, content);
+            showToast("Raportul a fost trimis către părinte!");
+            window.location.href = "fisa-notare.html";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cristina Pîslariu | Cabinet Psihologie 1:1</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Quicksand:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header>
+        <nav class="main-nav">
+            <ul id="nav-links">
+                <li><a href="#acasa" class="active">Acasă</a></li>
+                <li class="nav-psiholog" style="display: none;"><a href="calendar.html">Calendar</a></li>
+                <li class="nav-comun" style="display: none;"><a href="documente-parinte.html">Plan de intervenție</a></li>
+                <li class="nav-psiholog" style="display: none;"><a href="fisa-notare.html">Fișă de notare</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li id="auth-btn-container"><a href="javascript:void(0)" class="trigger-login">Sign In</a></li>
+                <li id="logout-btn-container" style="display: none;"><a href="javascript:void(0)" onclick="logout()" style="color: #a47373;">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="hero" id="acasa">
+        <div class="hero-image-container">
+            <img src="hero-illustration.webp" alt="Cristina Pislariu lucrând cu un copil">
+        </div>
+        <div class="hero-content">
+            <h1>Cristina Pîslariu</h1>
+            <h2>Cabinet individual de psihologie</h2>
+            <p class="hero-tagline">Evaluare și terapie pentru copii cu autism și alte tulburări de dezvoltare. Ofer sprijin părintelui și copilului într-un mediu sigur, cald și profesionist.</p>
+            <a href="javascript:void(0)" class="btn-cta trigger-login" id="hero-auth-btn">Autentificare</a>
+        </div>
+    </section>
+
+    <div id="loginModal" class="modal">
+        <div class="login-box modal-content">
+            <span class="close-modal">&times;</span>
+            <div class="login-header">
+                <h2>Bun venit</h2>
+                <p>Introdu datele pentru a accesa contul</p>
+            </div>
+
+            <form id="loginForm">
+                <div class="input-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" placeholder="psiholog@test.com sau parinte@test.com" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="password">Parolă</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="btn-login">Autentificare</button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="contact-info">
+                <p><span>📞</span> 0735 101 358</p>
+                <p><span>💬</span> 0735 101 358</p>
+                <p><span>🌐</span> www.your site.com</p>
+            </div>
+            <div class="footer-puzzle">
+                <img src="footer-puzzles.webp" alt="Puzzle decorativ">
+            </div>
+            <div class="footer-links">
+                <ul>
+                    <li><a href="contact.html">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+<script>
+    const modal = document.getElementById("loginModal");
+    const loginForm = document.getElementById("loginForm");
+    const errorMsg = document.getElementById("login-error");
+    const closeBtn = document.querySelector(".close-modal");
+    const triggers = document.querySelectorAll(".trigger-login");
+
+    function updateUI(role) {
+        const itemsPsiholog = document.querySelectorAll(".nav-psiholog");
+        const itemsComun = document.querySelectorAll(".nav-comun");
+        const authBtnNav = document.getElementById("auth-btn-container");
+        const logoutBtnNav = document.getElementById("logout-btn-container");
+        const heroBtn = document.getElementById("hero-auth-btn");
+
+        if (role) {
+            if(authBtnNav) authBtnNav.style.display = "none";
+            if(logoutBtnNav) logoutBtnNav.style.display = "block";
+            if(heroBtn) heroBtn.style.display = "none";
+            
+            if (role === "psiholog") {
+                itemsPsiholog.forEach(el => el.style.display = "block");
+                itemsComun.forEach(el => el.style.display = "block");
+            } else {
+                itemsComun.forEach(el => el.style.display = "block");
+                itemsPsiholog.forEach(el => el.style.display = "none");
+            }
+        } else {
+            if(authBtnNav) authBtnNav.style.display = "block";
+            if(logoutBtnNav) logoutBtnNav.style.display = "none";
+            if(heroBtn) heroBtn.style.display = "inline-block";
+            itemsPsiholog.forEach(el => el.style.display = "none");
+            itemsComun.forEach(el => el.style.display = "none");
+        }
+    }
+
+    window.onload = () => {
+        const savedRole = localStorage.getItem("userRole");
+        if (savedRole) updateUI(savedRole);
+    };
+
+    triggers.forEach(btn => btn.onclick = () => {
+        modal.style.display = "block";
+        if(errorMsg) errorMsg.style.display = "none";
+    });
+    
+    closeBtn.onclick = () => modal.style.display = "none";
+
+loginForm.onsubmit = function(e) {
+        e.preventDefault();
+        const email = document.getElementById("email").value.toLowerCase();
+        const pass = document.getElementById("password").value;
+
+        const staticUsers = {
+            "psiholog@test.com": { password: "cristina123", role: "psiholog" },
+            "parinte@test.com": { password: "familie2024", role: "parinte" }
+        };
+
+        const extraUsers = JSON.parse(localStorage.getItem("extraUsers") || "{}");
+        const allUsers = { ...staticUsers, ...extraUsers };
+
+        if (allUsers[email] && allUsers[email].password === pass) {
+            const role = allUsers[email].role;
+            localStorage.setItem("userRole", role);
+            localStorage.setItem("userEmail", email); // LINIE NOUĂ: Salvăm emailul
+            updateUI(role);
+            modal.style.display = "none";
+            loginForm.reset();
+        } else {
+            showToast("Email sau parolă incorectă!", "❌");
+        }
+    };
+
+    function logout() {
+        localStorage.removeItem("userRole");
+        window.location.reload();
+    }
+
+function showToast(message, icon = "✅") {
+    // Creăm elementul dacă nu există
+    let toast = document.getElementById('customToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'customToast';
+        toast.className = 'custom-notification';
+        document.body.appendChild(toast);
+    }
+    
+    toast.innerHTML = `<span class="notification-icon">${icon}</span> ${message}`;
+    toast.classList.add('show');
+    
+    // Dispare automat după 3 secunde
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+
+</script>
+</body>
+</html>

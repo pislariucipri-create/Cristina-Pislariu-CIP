@@ -1,0 +1,303 @@
+/* 1. VARIABILE ȘI SETĂRI GENERALE */
+:root {
+    --text-maro-inchis: #4e3629;
+    --text-maro-deschis: #6d4a37;
+    --verde-sage: #81a473;
+    --verde-sage-inchis: #6a8c5f;
+    --crem-fundal: #fdfaf3;
+    --alb-curat: #ffffff;
+    --maro-lemn: #c79e7f;
+    --shadow-lemn: rgba(199, 158, 127, 0.4);
+    
+    /* Fonturi */
+    --font-serif: 'Cormorant Garamond', serif;
+    --font-sans: 'Quicksand', sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--crem-fundal);
+    color: var(--text-maro-deschis);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+h1, h2, h3 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    color: var(--text-maro-inchis);
+}
+
+/* 2. NAVIGAȚIE */
+header {
+    background-color: var(--alb-curat);
+    padding: 1rem 10%;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.main-nav ul {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    list-style: none;
+}
+
+.main-nav a {
+    text-decoration: none;
+    color: var(--text-maro-inchis);
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: color 0.3s;
+}
+
+.main-nav a:hover, .main-nav a.active {
+    color: var(--verde-sage);
+}
+
+/* 3. SECȚIUNEA HERO */
+.hero {
+    padding: 4rem 10%;
+    text-align: center;
+}
+
+.hero-image-container img {
+    height: 400px;
+}
+
+.hero-content {
+    margin-top: 2rem;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.hero h1 {
+    font-size: 3.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.hero h2 {
+    font-size: 1.5rem;
+    color: var(--verde-sage-inchis);
+    margin-bottom: 1.5rem;
+}
+
+.hero-tagline {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+.btn-cta {
+    display: inline-block;
+    background-color: var(--verde-sage);
+    color: white;
+    padding: 0.9rem 2.5rem;
+    text-decoration: none;
+    border-radius: 30px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-cta:hover {
+    transform: translateY(-3px);
+    background-color: var(--verde-sage-inchis);
+    box-shadow: 0 5px 15px rgba(129, 164, 115, 0.4);
+}
+
+/* 4. MODAL (FEREASTRA DE AUTENTIFICARE) */
+.modal {
+    display: none; /* Ascuns implicit */
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(78, 54, 41, 0.7); /* Maro transparent */
+    backdrop-filter: blur(8px); /* Efect de blur fundal */
+}
+
+.modal-content {
+    background-color: var(--alb-curat);
+    margin: 10% auto;
+    padding: 3rem;
+    border-radius: 30px;
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    animation: slideDown 0.4s ease-out;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.close-modal {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--text-maro-deschis);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-modal:hover {
+    color: var(--verde-sage);
+}
+
+/* 5. FORMULAR AUTENTIFICARE */
+.login-header h2 {
+    font-size: 2.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.login-header p {
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
+}
+
+.input-group {
+    text-align: left;
+    margin-bottom: 1.5rem;
+}
+
+.input-group label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-maro-inchis);
+}
+
+.input-group input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 2px solid #f0f0f0;
+    border-radius: 12px;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.input-group input:focus {
+    border-color: var(--verde-sage);
+}
+
+.btn-login {
+    width: 100%;
+    background-color: var(--verde-sage);
+    color: white;
+    padding: 1rem;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-login:hover {
+    background-color: var(--verde-sage-inchis);
+}
+
+/* 6. FOOTER */
+footer {
+    background-color: var(--maro-lemn);
+    color: var(--text-maro-inchis);
+    padding: 3rem 10%;
+    margin-top: 4rem;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.contact-info p {
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+}
+
+.contact-info span {
+    margin-right: 10px;
+}
+
+.footer-puzzle img {
+    max-width: 120px;
+    opacity: 1;
+}
+
+.footer-links ul {
+    list-style: none;
+    text-align: right;
+}
+
+.footer-links a {
+    text-decoration: none;
+    color: var(--text-maro-inchis);
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.footer-links a:hover {
+    color: var(--verde-sage-inchis);
+}
+
+/* 7. LOGICA DE AFISARE (LOGIN/LOGOUT) */
+#logout-btn-container a {
+    color: #a47373 !important; /* Culoare diferită pentru Logout */
+}
+
+/* Clase pentru controlul accesului prin JS */
+.nav-psiholog, .nav-comun {
+    /* Acestea sunt controlate prin display: block/none din JavaScript */
+}
+
+/* Stil pentru Notificări Personalizate */
+.custom-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: var(--verde-sage);
+    color: white;
+    padding: 16px 28px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 10000;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    transform: translateX(120%);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.custom-notification.show {
+    transform: translateX(0);
+}
+
+.notification-icon {
+    font-size: 1.2rem;
+}
+
