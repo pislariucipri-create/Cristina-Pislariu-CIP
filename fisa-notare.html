@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fișă de Notare | Administrare Pacienți</title>
+    <title>Participanţi | Cristina Pîslariu</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Quicksand:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         .admin-container { padding: 4rem 10%; }
         .form-card { 
@@ -14,15 +15,12 @@
         }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
         .patient-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-        
         .patient-card { 
             background: white; padding: 1.5rem; border-radius: 15px; 
             border-left: 5px solid var(--verde-sage); box-shadow: 0 5px 15px rgba(0,0,0,0.03);
             position: relative; transition: 0.3s;
         }
         .patient-card:hover { transform: translateY(-5px); }
-
-        /* Stil Poză Profil */
         .profile-section { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
         .avatar-circle {
             width: 60px; height: 60px; border-radius: 50%;
@@ -30,20 +28,17 @@
             cursor: pointer; position: relative; flex-shrink: 0;
         }
         .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
-        
         .patient-card h3 { margin: 0; color: var(--text-maro-inchis); font-size: 1.2rem; }
-        
         .info-row { font-size: 0.85rem; margin-top: 5px; color: #666; }
         .pass-display { color: #d68100; font-weight: bold; background: #fff8e1; padding: 2px 6px; border-radius: 4px; }
-
         .btn-delete-profile {
             position: absolute; top: 10px; right: 10px;
             background: none; border: none; color: #ffab91;
             cursor: pointer; font-size: 1.2rem; transition: 0.2s;
         }
         .btn-delete-profile:hover { color: #d32f2f; }
-        
         .btn-tool { cursor: pointer; padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd; background: white; font-size: 0.8rem; font-weight: 600; }
+        .loading-overlay { text-align: center; padding: 3rem; color: #999; }
     </style>
 </head>
 <body>
@@ -52,7 +47,7 @@
         <nav class="main-nav">
             <ul>
                 <li><a href="index.html">Acasă</a></li>
-                <li><a href="fisa-notare.html" class="active">Fișă de notare</a></li>
+                <li><a href="fisa-notare.html" class="active">Participanţi</a></li>
                 <li><a href="javascript:void(0)" onclick="logout()" style="color: #a47373;">Logout</a></li>
             </ul>
         </nav>
@@ -64,127 +59,195 @@
 
         <section class="form-card">
             <h2>Adaugă Copil Nou</h2>
-            <form id="addPatientForm">
-                <div class="form-grid">
-                    <div class="input-group">
-                        <label>Nume Copil</label>
-                        <input type="text" id="childName" placeholder="Ex: Andrei Popescu" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Vârstă</label>
-                        <input type="number" id="childAge" placeholder="Ex: 5" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Email Părinte (Login)</label>
-                        <input type="email" id="parentEmail" placeholder="parinte@email.com" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Parolă Părinte</label>
-                        <input type="text" id="parentPass" placeholder="parola123" required>
-                    </div>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Nume Copil</label>
+                    <input type="text" id="childName" placeholder="Ex: Andrei Popescu">
                 </div>
-                <button type="submit" class="btn-cta">Creează Profil și Cont</button>
-            </form>
+                <div class="input-group">
+                    <label>Vârstă</label>
+                    <input type="number" id="childAge" placeholder="Ex: 5">
+                </div>
+                <div class="input-group">
+                    <label>Email Părinte</label>
+                    <input type="email" id="parentEmail" placeholder="parinte@email.com">
+                </div>
+                <div class="input-group">
+                    <label>Parolă Părinte</label>
+                    <input type="text" id="parentPass" placeholder="parola123">
+                </div>
+            </div>
+            <button class="btn-cta" onclick="addPatient()">Creează Profil și Cont</button>
         </section>
 
         <h2>Lista Copiilor</h2>
-        <div class="patient-list" id="patientsContainer"></div>
+        <div class="patient-list" id="patientsContainer">
+            <div class="loading-overlay">Se încarcă...</div>
+        </div>
     </main>
 
-    <script>
-        if (localStorage.getItem("userRole") !== "psiholog") { window.location.href = "index.html"; }
+<script>
+    // ============================================================
+    // CONFIGURARE SUPABASE
+    // ============================================================
+    const SUPABASE_URL = 'https://yexvpbgkrzerkizscgfn.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_q52fh6Xa3yNm3q0akTrKKw_7AlxLrCU';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const form = document.getElementById("addPatientForm");
+    // Verifică sesiune
+    const session = JSON.parse(sessionStorage.getItem('session') || 'null');
+    if (!session || session.role !== 'psiholog') { window.location.href = "index.html"; }
+
+    // ============================================================
+    // ÎNCĂRCARE PACIENȚI
+    // ============================================================
+    async function loadPatients() {
         const container = document.getElementById("patientsContainer");
+        const { data: patients, error } = await _supabase
+            .from('patients')
+            .select('*')
+            .order('created_at', { ascending: false });
 
-        function loadPatients() {
-            const patients = JSON.parse(localStorage.getItem("patients") || "[]");
-            container.innerHTML = "";
-            patients.forEach((p, index) => {
-                const photo = p.photo || 'https://via.placeholder.com/60?text=...';
-                
-                container.innerHTML += `
-                    <div class="patient-card">
-                        <button class="btn-delete-profile" onclick="deletePatient(${index})" title="Șterge Profil">🗑️</button>
-                        
-                        <div class="profile-section">
-                            <div class="avatar-circle" onclick="document.getElementById('file-${index}').click()">
-                                <img src="${photo}" id="img-${index}">
-                            </div>
-                            <input type="file" id="file-${index}" style="display:none" accept="image/*" onchange="uploadPhoto(event, ${index})">
-                            <div>
-                                <h3>${p.name}</h3>
-                                <div class="info-row">Vârstă: ${p.age} ani</div>
-                            </div>
+        if (error) {
+            container.innerHTML = '<div class="loading-overlay">Eroare la încărcare. Verifică configurarea Supabase.</div>';
+            console.error(error);
+            return;
+        }
+
+        container.innerHTML = "";
+        if (!patients || patients.length === 0) {
+            container.innerHTML = '<div class="loading-overlay">Nu există pacienți adăugați încă.</div>';
+            return;
+        }
+
+        patients.forEach(p => {
+            const photo = p.photo || 'https://via.placeholder.com/60?text=...';
+            container.innerHTML += `
+                <div class="patient-card" id="card-${p.id}">
+                    <button class="btn-delete-profile" onclick="deletePatient('${p.id}')" title="Șterge Profil">🗑️</button>
+                    <div class="profile-section">
+                        <div class="avatar-circle" onclick="document.getElementById('file-${p.id}').click()">
+                            <img src="${photo}" id="img-${p.id}">
                         </div>
-
-                        <div class="info-row"><strong>Email:</strong> ${p.email}</div>
-                        <div class="info-row"><strong>Parolă:</strong> <span class="pass-display">${p.pass}</span></div>
-
-                        <div style="display: flex; gap: 10px; margin-top: 15px;">
-                            <button class="btn-tool" onclick="window.location.href='fisa-individuala.html?id=${index}'">Tabel Progres</button>
-                            <button class="btn-tool" style="border-color: #795548; color: #795548;" 
-        onclick="window.location.href='documente-parinte.html?edit=true&id=${index}'">
-    Scrie Raport
-</button>
+                        <input type="file" id="file-${p.id}" style="display:none" accept="image/*" onchange="uploadPhoto(event, '${p.id}')">
+                        <div>
+                            <h3>${p.name}</h3>
+                            <div class="info-row">Vârstă: ${p.age} ani</div>
                         </div>
                     </div>
-                `;
-            });
-        }
+                    <div class="info-row"><strong>Email:</strong> ${p.email}</div>
+                    <div class="info-row"><strong>Parolă:</strong> <span class="pass-display">${p.pass}</span></div>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn-tool" onclick="window.location.href='fisa-individuala.html?id=${p.id}'">Fișă de notare</button>
+                        <button class="btn-tool" style="border-color: #795548; color: #795548;" 
+                                onclick="window.location.href='documente-parinte.html?edit=true&id=${p.id}'">
+                            Scrie Raport
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    }
 
-        // --- FUNCȚII NOI ---
-        
-        function uploadPhoto(event, index) {
-            const file = event.target.files[0];
-            const reader = new FileReader();
-            reader.onloadend = function() {
-                const patients = JSON.parse(localStorage.getItem("patients") || "[]");
-                patients[index].photo = reader.result;
-                localStorage.setItem("patients", JSON.stringify(patients));
-                document.getElementById(`img-${index}`).src = reader.result;
-            }
-            if (file) reader.readAsDataURL(file);
-        }
+    // ============================================================
+    // ADAUGĂ PACIENT
+    // ============================================================
+async function addPatient() {
+    const name = document.getElementById("childName").value.trim();
+    const age = document.getElementById("childAge").value;
+    const email = document.getElementById("parentEmail").value.trim().toLowerCase();
+    const pass = document.getElementById("parentPass").value.trim();
 
-        function deletePatient(index) {
-            if (confirm("Ești sigură că vrei să ștergi acest profil? Se vor șterge și toate datele din tabel.")) {
-                let patients = JSON.parse(localStorage.getItem("patients") || "[]");
-                
-                // Ștergem datele asociate din memoria browserului
-                localStorage.removeItem(`fisa_data_v4_${index}`);
-                localStorage.removeItem(`report_${index}`);
-                
-                patients.splice(index, 1);
-                localStorage.setItem("patients", JSON.stringify(patients));
-                loadPatients();
-            }
-        }
+    if (!name || !age || !email || !pass) {
+        showToast("Completează toate câmpurile!", "❌");
+        return;
+    }
 
-        form.onsubmit = function(e) {
-            e.preventDefault();
-            const newPatient = {
-                name: document.getElementById("childName").value,
-                age: document.getElementById("childAge").value,
-                email: document.getElementById("parentEmail").value,
-                pass: document.getElementById("parentPass").value,
-                photo: null
-            };
+    // 1. Adaugă părintele în users
+    const { error: userErr } = await _supabase
+        .from('users')
+        .insert([{ email, password: pass, role: 'parinte' }]);
 
-            const patients = JSON.parse(localStorage.getItem("patients") || "[]");
-            patients.push(newPatient);
-            localStorage.setItem("patients", JSON.stringify(patients));
+    if (userErr) {
+        showToast("Eroare: emailul există deja sau altă problemă: " + userErr.message, "❌");
+        return;
+    }
 
-            const localUsers = JSON.parse(localStorage.getItem("extraUsers") || "{}");
-            localUsers[newPatient.email] = { password: newPatient.pass, role: "parinte" };
-            localStorage.setItem("extraUsers", JSON.stringify(localUsers));
+    // 2. Adaugă copilul în patients
+    const { error: patientErr } = await _supabase
+        .from('patients')
+        .insert([{ name, age: parseInt(age), email, pass, photo: null }]);
 
-            form.reset();
-            loadPatients();
+    if (patientErr) {
+        showToast("Eroare la salvare pacient: " + patientErr.message, "❌");
+        return;
+    }
+
+    // Reset form
+    document.getElementById("childName").value = '';
+    document.getElementById("childAge").value = '';
+    document.getElementById("parentEmail").value = '';
+    document.getElementById("parentPass").value = '';
+
+    showToast("Profil și cont create cu succes!");
+    loadPatients();
+}
+
+    // ============================================================
+    // UPLOAD POZĂ
+    // ============================================================
+    async function uploadPhoto(event, patientId) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onloadend = async function() {
+            const base64 = reader.result;
+            await _supabase
+                .from('patients')
+                .update({ photo: base64 })
+                .eq('id', patientId);
+            document.getElementById(`img-${patientId}`).src = base64;
+            showToast("Poza a fost salvată!");
         };
+        if (file) reader.readAsDataURL(file);
+    }
 
-        function logout() { localStorage.removeItem("userRole"); window.location.href = "index.html"; }
+    // ============================================================
+    // ȘTERGE PACIENT
+    // ============================================================
+    async function deletePatient(patientId) {
+        if (!confirm("Ești sigură că vrei să ștergi acest profil? Se vor șterge și toate datele asociate.")) return;
+
+        // Cascade delete (ON DELETE CASCADE în schema SQL)
+        const { error } = await _supabase
+            .from('patients')
+            .delete()
+            .eq('id', patientId);
+
+        if (error) {
+            showToast("Eroare la ștergere: " + error.message, "❌");
+            return;
+        }
+
+        showToast("Profil șters.");
         loadPatients();
-    </script>
+    }
+
+    function logout() { sessionStorage.removeItem('session'); window.location.href = "index.html"; }
+
+    function showToast(message, icon = "✅") {
+        let toast = document.getElementById('customToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'customToast';
+            toast.className = 'custom-notification';
+            document.body.appendChild(toast);
+        }
+        toast.innerHTML = `<span class="notification-icon">${icon}</span> ${message}`;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    loadPatients();
+</script>
 </body>
 </html>

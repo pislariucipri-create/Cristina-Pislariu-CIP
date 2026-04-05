@@ -3,239 +3,284 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fișă Monitorizare | Notare Rapidă</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Fișă Participanți | Cristina Pîslariu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        .excel-container { padding: 2rem 2%; overflow-x: auto; }
-        .controls { margin-bottom: 20px; display: flex; gap: 10px; }
-        .excel-table { width: 100%; border-collapse: collapse; background: white; min-width: 1000px; }
-        .excel-table th, .excel-table td { border: 1px solid #ccc; padding: 12px 8px; text-align: center; vertical-align: middle; }
-        
-        /* Stil celulă cu butoane */
-        .score-cell { min-width: 120px; }
-        .btn-group { display: flex; justify-content: center; gap: 4px; margin-bottom: 5px; }
-        .btn-score { 
-            width: 25px; height: 25px; border: 1px solid #ddd; 
-            border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;
-            display: flex; align-items: center; justify-content: center; transition: 0.2s;
+        :root {
+            --text-maro-inchis: #4e3629;
+            --text-maro-deschis: #6d4a37;
+            --verde-sage: #81a473;
+            --verde-sage-inchis: #6a8c5f;
+            --crem-fundal: #fdfaf3;
+            --alb-curat: #ffffff;
+            --maro-lemn: #c79e7f;
+            --font-serif: 'Cormorant Garamond', serif;
+            --font-sans: 'Quicksand', sans-serif;
+            --succes-bg: #d3f9d8;
         }
+        body { font-family: var(--font-sans); background-color: var(--crem-fundal); color: var(--text-maro-deschis); margin: 0; padding: 0; }
+        header { background-color: var(--alb-curat); padding: 1rem 10%; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; }
+        .nav-bar { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: auto; }
+        .btn-back { text-decoration: none; color: var(--text-maro-inchis); font-weight: 700; display: flex; align-items: center; gap: 5px; transition: 0.3s; }
+        .btn-back:hover { color: var(--verde-sage); transform: translateX(-3px); }
+        .main-container { max-width: 1000px; margin: 40px auto; background: var(--alb-curat); padding: 40px; border-radius: 30px; box-shadow: 0 10px 30px rgba(78, 54, 41, 0.05); }
+        h2 { font-family: var(--font-serif); font-size: 2.5rem; color: var(--text-maro-inchis); margin-top: 0; }
+        .btn-main { background-color: var(--verde-sage); color: white; padding: 0.8rem 2rem; border: none; border-radius: 30px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(129, 164, 115, 0.2); }
+        .btn-main:hover { background-color: var(--verde-sage-inchis); transform: translateY(-2px); }
+        .excel-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; border-radius: 15px; overflow: hidden; border: 1px solid #eee; }
+        .excel-table th { background-color: #f8f9fa; color: var(--text-maro-inchis); padding: 18px; font-family: var(--font-serif); font-size: 1.3rem; border-bottom: 2px solid var(--verde-sage); }
+        .excel-table td { padding: 15px; border-bottom: 1px solid #f0f0f0; text-align: center; }
+        .cat-container { display: flex; align-items: center; gap: 10px; background: var(--crem-fundal); padding: 8px 15px; border-radius: 20px; transition: 0.3s; }
+        .cat-container:hover { background: #f2ede0; }
+        .cat-name { cursor: pointer; color: var(--text-maro-inchis); font-weight: 700; flex-grow: 1; }
+        .btn-edit-name { cursor: pointer; color: var(--maro-lemn); background: none; border: none; font-size: 1.1rem; }
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(78, 54, 41, 0.6); backdrop-filter: blur(5px); }
+        .modal-content { background: var(--alb-curat); margin: 5% auto; padding: 40px; width: 80%; max-width: 800px; border-radius: 30px; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
+        .close-btn { position: absolute; right: 25px; top: 20px; font-size: 30px; cursor: pointer; color: var(--maro-lemn); }
+        .mini-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .mini-table th { color: var(--text-maro-inchis); padding: 12px; border-bottom: 1px solid var(--maro-lemn); }
+        .mini-table td { padding: 15px; border-bottom: 1px solid #eee; }
+        .btn-score { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; font-weight: 700; margin: 0 3px; transition: 0.2s; }
         .btn-minus { background: #fee; color: #c33; }
         .btn-p { background: #fff4e5; color: #d68100; }
         .btn-plus { background: #e8f5e9; color: #2e7d32; }
-        .btn-score:hover { transform: scale(1.1); filter: brightness(0.9); }
-        
-        .score-display { 
-            font-family: monospace; font-size: 14px; letter-spacing: 1px; 
-            min-height: 1.2em; border-top: 1px dashed #eee; padding-top: 3px;
-        }
-
-        /* Marcaj Obiectiv Completat */
-        .completed-row { background-color: #c8e6c9 !important; transition: background 0.5s; }
-        .completed-row td { border-color: #81c784; }
-
-        .cat-select { width: 100%; border: none; background: #f9f9f9; padding: 5px; cursor: pointer; }
-        .btn-tool { padding: 8px 12px; border-radius: 5px; border: 1px solid var(--verde-sage); background: white; color: var(--verde-sage); cursor: pointer; font-weight: bold; }
-        .btn-tool:hover { background: var(--verde-sage); color: white; }
+        .btn-score:hover { transform: scale(1.1); }
+        .completed-row { background-color: var(--succes-bg) !important; }
+        .success-badge { background: var(--verde-sage); color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; }
+        .save-indicator { color: var(--verde-sage); font-size: 0.85rem; margin-left: 15px; }
     </style>
 </head>
 <body>
 
     <header>
-        <nav class="main-nav">
-            <ul>
-                <li><a href="fisa-notare.html">← Înapoi</a></li>
-                <li id="displayChildName" style="font-weight: bold; color: var(--verde-sage);"></li>
-            </ul>
+        <nav class="nav-bar">
+            <a href="fisa-notare.html" class="btn-back">← Înapoi la listă</a>
+            <h3 id="pageTitle" style="margin:0; font-family: var(--font-serif); color: var(--verde-sage-inchis);"></h3>
         </nav>
     </header>
 
-    <main class="excel-container">
-        <div class="controls">
-            <button class="btn-tool" onclick="addRow()">+ Adaugă Obiectiv</button>
-            <button class="btn-tool" onclick="addTodayColumn()">+ Adaugă Coloană (Azi)</button>
+    <div class="main-container">
+        <h2>Fișă Participanţi</h2>
+        <div class="controls" style="display:flex; align-items:center; gap:15px;">
+            <button class="btn-main" onclick="addRow()">+ Adaugă Obiectiv Nou</button>
+            <button class="btn-main" onclick="saveData()" style="background: #5c7a4e;">💾 Salvează</button>
+            <span id="saveIndicator" class="save-indicator" style="display:none;">✓ Salvat</span>
         </div>
-
-        <table class="excel-table" id="excelTable">
+        
+        <table class="excel-table">
             <thead>
-                <tr id="headerRow">
-                    <th style="width:50px">Nr.</th>
-                    <th style="width:250px">Obiectiv</th>
-                    <th style="width:180px">Categorie</th>
-                    <th style="width:200px">Observații</th>
+                <tr>
+                    <th style="width: 100px;">Nr. crt</th>
+                    <th>Categorie</th>
+                    <th>Observații</th>
                 </tr>
             </thead>
-            <tbody id="tableBody"></tbody>
+            <tbody id="mainTableBody"></tbody>
         </table>
+    </div>
 
-        <button class="btn-cta" style="position:fixed; bottom:20px; right:20px;" onclick="saveAll()">Salvează Tot</button>
-    </main>
+    <div id="catModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h3 id="modalTitle" style="font-family: var(--font-serif); font-size: 2rem; color: var(--text-maro-inchis);">Detalii</h3>
+            <button class="btn-main" onclick="addMiniRow()">+ Adaugă Sub-Obiectiv</button>
+            <table class="mini-table">
+                <thead>
+                    <tr>
+                        <th>Obiectiv Specific</th>
+                        <th>Notare</th>
+                        <th>Istoric</th>
+                    </tr>
+                </thead>
+                <tbody id="miniTableBody"></tbody>
+            </table>
+            <br>
+            <button class="btn-main" onclick="closeModal()" style="background: var(--maro-lemn); width: 100%;">Salvează și Închide</button>
+        </div>
+    </div>
 
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const childId = urlParams.get('id');
-        const patients = JSON.parse(localStorage.getItem("patients") || "[]");
-        const currentChild = patients[childId];
-        let categories = JSON.parse(localStorage.getItem(`categories_${childId}`)) || ["Limbaj", "Cognitiv", "Motricitate"];
+<script>
+    // ============================================================
+    // CONFIGURARE SUPABASE
+    // ============================================================
+    const SUPABASE_URL = 'https://yexvpbgkrzerkizscgfn.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_q52fh6Xa3yNm3q0akTrKKw_7AlxLrCU';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        if (!currentChild) window.location.href = "fisa-notare.html";
-        document.getElementById("displayChildName").innerText = "Fișă: " + currentChild.name;
+    const urlParams = new URLSearchParams(window.location.search);
+    const patientId = urlParams.get('id'); // Acum e UUID
 
-        // --- LOGICA DE NOTARE ---
-        function addScore(btn, type) {
-            const display = btn.parentElement.nextElementSibling;
-            display.innerText += type;
-            checkCompletion(btn.closest('tr'));
+    let currentEditingRowIndex = null;
+    let tableData = []; // Array de rânduri principale
+    let fisaRecordId = null; // ID-ul înregistrării din fisa_data
+
+    // ============================================================
+    // INIȚIALIZARE
+    // ============================================================
+    async function init() {
+        if (!patientId) { window.location.href = "fisa-notare.html"; return; }
+
+        // Încarcă date pacient pentru titlu
+        const { data: patient } = await _supabase
+            .from('patients')
+            .select('name')
+            .eq('id', patientId)
+            .single();
+        if (patient) document.getElementById('pageTitle').innerText = patient.name;
+
+        // Încarcă fișa de notare
+        const { data: fisa } = await _supabase
+            .from('fisa_data')
+            .select('*')
+            .eq('patient_id', patientId)
+            .single();
+
+        if (fisa) {
+            fisaRecordId = fisa.id;
+            tableData = fisa.data || [];
+            renderMainTable();
         }
+    }
 
-        function checkCompletion(row) {
-            let totalSuccess = 0;
-            // Căutăm în toate celulele de scor (de la indexul 4 încolo)
-            const scoreDisplays = row.querySelectorAll('.score-display');
-            scoreDisplays.forEach(display => {
-                const text = display.innerText;
-                // Numărăm câți de + și P sunt în total pe acest rând
-                const pluses = (text.match(/\+/g) || []).length;
-                const ps = (text.match(/P/g) || []).length;
-                totalSuccess += (pluses + ps);
-            });
-
-            if (totalSuccess >= 5) {
-                row.classList.add('completed-row');
-            } else {
-                row.classList.remove('completed-row');
-            }
-        }
-
-        function createScoreCellContent(existingValue = "") {
-            return `
-                <div class="btn-group">
-                    <button class="btn-score btn-minus" onclick="addScore(this, '-')">-</button>
-                    <button class="btn-score btn-p" onclick="addScore(this, 'P')">P</button>
-                    <button class="btn-score btn-plus" onclick="addScore(this, '+')">+</button>
-                </div>
-                <div class="score-display">${existingValue}</div>
-            `;
-        }
-
-        // --- GESTIUNE TABEL ---
-        function addRow() {
-            const tbody = document.getElementById("tableBody");
-            const nr = tbody.rows.length + 1;
+    // ============================================================
+    // RENDER TABEL PRINCIPAL
+    // ============================================================
+    function renderMainTable() {
+        const tbody = document.getElementById("mainTableBody");
+        tbody.innerHTML = "";
+        tableData.forEach((rowData, rowIndex) => {
             const row = tbody.insertRow();
-            
             row.innerHTML = `
-                <td>${nr}</td>
-                <td contenteditable="true" style="text-align:left">Obiectiv nou</td>
-                <td><select class="cat-select" onchange="handleCategoryChange(event)"></select></td>
-                <td contenteditable="true"></td>
+                <td><b style="color: var(--maro-lemn)">${rowIndex + 1}</b></td>
+                <td>
+                    <div class="cat-container">
+                        <div class="cat-name" onclick="openTable(${rowIndex})">${rowData.catName || 'Apasă pentru detalii'}</div>
+                        <button class="btn-edit-name" onclick="renameCategory(${rowIndex})">✎</button>
+                    </div>
+                </td>
+                <td contenteditable="true" onblur="updateObs(${rowIndex}, this.innerText)" style="font-style: italic; color: #999;">${rowData.obs || ''}</td>
             `;
-            
-            const headerCells = document.getElementById("headerRow").cells.length;
-            for(let i=4; i<headerCells; i++) {
-                let cell = row.insertCell();
-                cell.className = "score-cell";
-                cell.innerHTML = createScoreCellContent();
-            }
-            populateDropdown(row.querySelector(".cat-select"));
+        });
+    }
+
+    function addRow() {
+        tableData.push({ catName: "Categorie nouă", obs: "", subItems: [] });
+        renderMainTable();
+    }
+
+    function renameCategory(rowIndex) {
+        const newName = prompt("Numele categoriei:", tableData[rowIndex].catName || "");
+        if (newName) {
+            tableData[rowIndex].catName = newName;
+            renderMainTable();
+        }
+    }
+
+    function updateObs(rowIndex, val) {
+        tableData[rowIndex].obs = val;
+    }
+
+    // ============================================================
+    // MODAL SUB-OBIECTIVE
+    // ============================================================
+    function openTable(rowIndex) {
+        currentEditingRowIndex = rowIndex;
+        document.getElementById("modalTitle").innerText = tableData[rowIndex].catName || "Detalii";
+        document.getElementById("catModal").style.display = "block";
+        renderMiniTable();
+    }
+
+    function closeModal() { document.getElementById("catModal").style.display = "none"; }
+
+    function renderMiniTable() {
+        const tbody = document.getElementById("miniTableBody");
+        tbody.innerHTML = "";
+        const items = tableData[currentEditingRowIndex].subItems || [];
+        items.forEach((item, index) => {
+            const row = tbody.insertRow();
+            if (item.completed) row.classList.add('completed-row');
+            row.innerHTML = `
+                <td contenteditable="true" onblur="updateMiniName(${index}, this.innerText)" style="font-weight:bold">${item.name || ''}</td>
+                <td>
+                    <button class="btn-score btn-minus" onclick="addPoint(${index}, '-')">-</button>
+                    <button class="btn-score btn-p" onclick="addPoint(${index}, 'P')">P</button>
+                    <button class="btn-score btn-plus" onclick="addPoint(${index}, '+')">+</button>
+                </td>
+                <td>
+                    <span style="letter-spacing: 2px; font-weight: 700; color: var(--text-maro-inchis)">${item.scores || ''}</span>
+                    ${item.completed ? '<br><span class="success-badge">SUCCES</span>' : ''}
+                </td>
+            `;
+        });
+    }
+
+    function addMiniRow() {
+        if (!tableData[currentEditingRowIndex].subItems) tableData[currentEditingRowIndex].subItems = [];
+        tableData[currentEditingRowIndex].subItems.push({ name: "Obiectiv nou", scores: "", completed: false });
+        renderMiniTable();
+    }
+
+    function updateMiniName(index, val) {
+        tableData[currentEditingRowIndex].subItems[index].name = val;
+    }
+
+    function addPoint(index, char) {
+        const item = tableData[currentEditingRowIndex].subItems[index];
+        item.scores = (item.scores || '') + char;
+        const plusCount = (item.scores.match(/\+/g) || []).length;
+        const pCount = (item.scores.match(/P/g) || []).length;
+        item.completed = (plusCount + pCount >= 5);
+        renderMiniTable();
+    }
+
+    // ============================================================
+    // SALVARE ÎN SUPABASE
+    // ============================================================
+    async function saveData() {
+        let result;
+        if (fisaRecordId) {
+            // Update
+            result = await _supabase
+                .from('fisa_data')
+                .update({ data: tableData, updated_at: new Date().toISOString() })
+                .eq('id', fisaRecordId);
+        } else {
+            // Insert nou
+            result = await _supabase
+                .from('fisa_data')
+                .insert([{ patient_id: patientId, data: tableData }])
+                .select()
+                .single();
+            if (result.data) fisaRecordId = result.data.id;
         }
 
-        function addTodayColumn() {
-            const now = new Date();
-            const dateStr = now.getDate().toString().padStart(2, '0') + "." + (now.getMonth() + 1).toString().padStart(2, '0');
-            const header = document.getElementById("headerRow");
-            const th = document.createElement("th");
-            th.contentEditable = "true";
-            th.innerText = dateStr;
-            header.appendChild(th);
-
-            const tbody = document.getElementById("tableBody");
-            for (let i = 0; i < tbody.rows.length; i++) {
-                let cell = tbody.rows[i].insertCell();
-                cell.className = "score-cell";
-                cell.innerHTML = createScoreCellContent();
-            }
+        if (result.error) {
+            showToast("Eroare la salvare: " + result.error.message, "❌");
+        } else {
+            const indicator = document.getElementById('saveIndicator');
+            indicator.style.display = 'inline';
+            setTimeout(() => indicator.style.display = 'none', 2000);
+            showToast("Fișa a fost salvată!");
         }
+    }
 
-        // --- CATEGORII ---
-        function populateDropdown(selectElement) {
-            const currentSelected = selectElement.value;
-            selectElement.innerHTML = "";
-            categories.forEach(cat => {
-                let opt = document.createElement("option");
-                opt.value = cat; opt.innerText = cat;
-                if(cat === currentSelected) opt.selected = true;
-                selectElement.appendChild(opt);
-            });
-            selectElement.innerHTML += `<option disabled>──────────</option>
-                                       <option value="ACTION_ADD" style="color:green">+ Adaugă...</option>
-                                       <option value="ACTION_DELETE" style="color:red">- Șterge...</option>`;
+    window.onclick = function(e) { if (e.target == document.getElementById("catModal")) closeModal(); }
+
+    function showToast(message, icon = "✅") {
+        let toast = document.getElementById('customToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'customToast';
+            toast.className = 'custom-notification';
+            document.body.appendChild(toast);
         }
+        toast.innerHTML = `<span class="notification-icon">${icon}</span> ${message}`;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
 
-        function handleCategoryChange(event) {
-            const select = event.target;
-            if (select.value === "ACTION_ADD") {
-                const n = prompt("Nume categorie:");
-                if (n) { categories.push(n); saveCategories(); refreshAllDropdowns(); select.value = n; }
-            } else if (select.value === "ACTION_DELETE") {
-                const d = prompt("Șterge categoria:");
-                if (d) { categories = categories.filter(c => c !== d); saveCategories(); refreshAllDropdowns(); }
-            }
-        }
-
-        function saveCategories() { localStorage.setItem(`categories_${childId}`, JSON.stringify(categories)); }
-        function refreshAllDropdowns() { document.querySelectorAll(".cat-select").forEach(sel => populateDropdown(sel)); }
-
-        // --- SALVARE ȘI ÎNCĂRCARE ---
-        function saveAll() {
-            const rowsData = [];
-            const headerData = Array.from(document.getElementById("headerRow").cells).map(c => c.innerText);
-            
-            for (let row of document.getElementById("tableBody").rows) {
-                const rowCells = [];
-                for (let i = 0; i < row.cells.length; i++) {
-                    if (i === 2) rowCells.push(row.cells[i].querySelector("select").value);
-                    else if (i >= 4) rowCells.push(row.cells[i].querySelector(".score-display").innerText);
-                    else rowCells.push(row.cells[i].innerText);
-                }
-                rowsData.push(rowCells);
-            }
-            localStorage.setItem(`fisa_data_v4_${childId}`, JSON.stringify({ header: headerData, body: rowsData }));
-            showToast("Toate datele au fost salvate!");
-        }
-
-        window.onload = function() {
-            const saved = localStorage.getItem(`fisa_data_v4_${childId}`);
-            if (saved) {
-                const data = JSON.parse(saved);
-                const header = document.getElementById("headerRow");
-                header.innerHTML = "";
-                data.header.forEach((t, i) => {
-                    let th = document.createElement("th"); th.innerText = t;
-                    if(i > 3) th.contentEditable = "true";
-                    header.appendChild(th);
-                });
-
-                const tbody = document.getElementById("tableBody");
-                data.body.forEach(rowData => {
-                    let row = tbody.insertRow();
-                    rowData.forEach((cellData, i) => {
-                        let cell = row.insertCell();
-                        if (i === 2) {
-                            cell.innerHTML = `<select class="cat-select" onchange="handleCategoryChange(event)"></select>`;
-                            populateDropdown(cell.querySelector("select"));
-                            cell.querySelector("select").value = cellData;
-                        } else if (i >= 4) {
-                            cell.className = "score-cell";
-                            cell.innerHTML = createScoreCellContent(cellData);
-                        } else {
-                            cell.innerText = cellData;
-                            if (i !== 0) cell.contentEditable = "true";
-                        }
-                    });
-                    checkCompletion(row); // Verifică la încărcare dacă e verde
-                });
-            }
-        };
-    </script>
+    init();
+</script>
 </body>
 </html>

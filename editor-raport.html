@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Editor Raport | Cristina Pîslariu</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         .editor-container { padding: 3rem 10%; max-width: 900px; margin: auto; }
         textarea { 
@@ -14,6 +15,7 @@
         }
         .header-editor { display: flex; justify-content: space-between; align-items: center; }
         .btn-save { background: #6b8e23; color: white; padding: 10px 25px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-save:hover { opacity: 0.85; }
     </style>
 </head>
 <body>
@@ -28,33 +30,90 @@
         <a href="fisa-notare.html">⬅ Înapoi la listă fără a salva</a>
     </div>
 
-    <script>
-        // Luăm ID-ul copilului din URL (?id=0, ?id=1 etc.)
-        const urlParams = new URLSearchParams(window.location.search);
-        const childId = urlParams.get('id');
-        const patients = JSON.parse(localStorage.getItem("patients") || "[]");
-        const child = patients[childId];
+<script>
+    // ============================================================
+    // CONFIGURARE SUPABASE
+    // ============================================================
+    const SUPABASE_URL = 'https://yexvpbgkrzerkizscgfn.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_q52fh6Xa3yNm3q0akTrKKw_7AlxLrCU';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        if (!child) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const patientId = urlParams.get('id'); // UUID
+
+    let reportRecordId = null;
+
+    async function init() {
+        if (!patientId) { window.location.href = "fisa-notare.html"; return; }
+
+        // Încarcă numele pacientului
+        const { data: patient } = await _supabase
+            .from('patients')
+            .select('name')
+            .eq('id', patientId)
+            .single();
+
+        if (!patient) {
             showToast("Eroare: Copilul nu a fost găsit!", "❌");
             window.location.href = "fisa-notare.html";
+            return;
         }
 
-        document.getElementById("editorTitle").innerText = "Scrie Raport pentru: " + child.name;
+        document.getElementById("editorTitle").innerText = "Scrie Raport pentru: " + patient.name;
 
-        // Încărcăm raportul existent dacă există
-        const savedContent = localStorage.getItem(`report_${childId}`);
-        if (savedContent) {
-            document.getElementById("reportTextArea").value = savedContent;
+        // Încarcă raportul existent
+        const { data: report } = await _supabase
+            .from('reports')
+            .select('*')
+            .eq('patient_id', patientId)
+            .single();
+
+        if (report) {
+            reportRecordId = report.id;
+            document.getElementById("reportTextArea").value = report.content || '';
+        }
+    }
+
+    async function saveReport() {
+        const content = document.getElementById("reportTextArea").value;
+
+        let result;
+        if (reportRecordId) {
+            result = await _supabase
+                .from('reports')
+                .update({ content, updated_at: new Date().toISOString() })
+                .eq('id', reportRecordId);
+        } else {
+            result = await _supabase
+                .from('reports')
+                .insert([{ patient_id: patientId, content }])
+                .select()
+                .single();
+            if (result.data) reportRecordId = result.data.id;
         }
 
-        function saveReport() {
-            const content = document.getElementById("reportTextArea").value;
-            // Salvăm raportul folosind ID-ul unic al copilului
-            localStorage.setItem(`report_${childId}`, content);
+        if (result.error) {
+            showToast("Eroare la salvare: " + result.error.message, "❌");
+        } else {
             showToast("Raportul a fost trimis către părinte!");
-            window.location.href = "fisa-notare.html";
+            setTimeout(() => window.location.href = "fisa-notare.html", 1000);
         }
-    </script>
+    }
+
+    function showToast(message, icon = "✅") {
+        let toast = document.getElementById('customToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'customToast';
+            toast.className = 'custom-notification';
+            document.body.appendChild(toast);
+        }
+        toast.innerHTML = `<span class="notification-icon">${icon}</span> ${message}`;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    init();
+</script>
 </body>
 </html>

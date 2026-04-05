@@ -2,85 +2,297 @@
 <html lang="ro">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendar Jurnal | Cristina Pîslariu</title>
-    <link rel="stylesheet" href="style.css">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        .calendar-app { padding: 2rem 5%; max-width: 900px; margin: auto; }
-        
-        /* Header Calendar (Navigare Luni/Ani) */
+        /* 1. VARIABILE ȘI SETĂRI GENERALE */
+        :root {
+            --text-maro-inchis: #4e3629;
+            --text-maro-deschis: #6d4a37;
+            --verde-sage: #81a473;
+            --verde-sage-inchis: #6a8c5f;
+            --crem-fundal: #fdfaf3;
+            --alb-curat: #ffffff;
+            --maro-lemn: #c79e7f;
+            --shadow-lemn: rgba(199, 158, 127, 0.4);
+            --font-serif: 'Cormorant Garamond', serif;
+            --font-sans: 'Quicksand', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--crem-fundal);
+            color: var(--text-maro-deschis);
+            line-height: 1.6;
+        }
+
+        /* 2. NAVIGAȚIE */
+        header {
+            background-color: var(--alb-curat);
+            padding: 1rem 10%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .main-nav ul {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            list-style: none;
+        }
+
+        .main-nav a {
+            text-decoration: none;
+            color: var(--text-maro-inchis);
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: color 0.3s;
+        }
+
+        .main-nav a:hover {
+            color: var(--verde-sage);
+        }
+
+        /* 3. CALENDAR APP */
+        .calendar-app {
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
         .calendar-nav {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: var(--verde-sage);
-            color: white;
-            padding: 20px;
-            border-radius: 15px 15px 0 0;
+            margin-bottom: 25px;
+            background: var(--alb-curat);
+            padding: 20px 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(78, 54, 41, 0.05);
         }
-        .nav-btn {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .nav-btn:hover { background: rgba(255,255,255,0.4); }
 
-        /* Grila Calendarului */
-        .calendar-days-grid {
+        .calendar-nav h2 {
+            font-family: var(--font-serif);
+            font-size: 2.2rem;
+            color: var(--text-maro-inchis);
+            margin: 0;
+        }
+
+        .nav-controls { display: flex; gap: 10px; }
+
+        .btn-nav {
+            background-color: var(--verde-sage);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: var(--font-sans);
+        }
+
+        .btn-nav:hover {
+            background-color: var(--verde-sage-inchis);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px var(--shadow-lemn);
+        }
+
+        /* Grila Calendar */
+        .calendar-container {
+            background: var(--alb-curat);
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 15px 40px rgba(78, 54, 41, 0.1);
+            border: 1px solid rgba(199, 158, 127, 0.2);
+        }
+
+        .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            background: white;
-            border: 1px solid #ddd;
-            border-top: none;
-        }
-        .day-label {
-            background: #f4f4f4;
-            padding: 10px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 0.8rem;
-            border-bottom: 1px solid #ddd;
-        }
-        .day-cell {
-            min-height: 100px;
-            padding: 5px;
-            border: 0.5px solid #eee;
-            cursor: pointer;
-            transition: 0.2s;
-            position: relative;
-        }
-        .day-cell:hover { background: #fdfaf3; }
-        .day-cell.today { background: #e8f5e9; border: 2px solid var(--verde-sage); }
-        .day-number { font-weight: bold; margin-bottom: 5px; display: block; }
-        
-        /* Indicator Notiță */
-        .note-preview {
-            font-size: 0.7rem;
-            color: #6d4a37;
-            background: #fdf2e9;
-            padding: 2px 4px;
-            border-radius: 3px;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
         }
 
-        /* Modal Notițe */
+        .day-label {
+            background: var(--maro-lemn);
+            color: white;
+            text-align: center;
+            padding: 12px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .day-cell {
+            min-height: 125px;
+            border-right: 1px solid #f3efeb;
+            border-bottom: 1px solid #f3efeb;
+            padding: 10px;
+            transition: background 0.2s;
+            position: relative;
+        }
+
+        .day-cell:nth-child(7n) { border-right: none; }
+
+        .day-cell:hover {
+            background-color: #fdfaf3;
+            cursor: pointer;
+        }
+
+        .day-number {
+            font-family: var(--font-serif);
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-maro-inchis);
+            width: 32px;
+            height: 32px;
+            line-height: 32px;
+            text-align: center;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .day-cell.today .day-number {
+            background-color: var(--verde-sage);
+            color: white;
+        }
+
+        /* Notițe afișate pe calendar */
+        .event-chip {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            margin-top: 6px;
+            border-radius: 8px;
+            color: white;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* 4. MODAL STILIZAT (Tip Jurnal) */
         .note-modal {
             display: none;
             position: fixed;
-            z-index: 2000;
+            z-index: 9999;
             left: 0; top: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(78, 54, 41, 0.7);
+            backdrop-filter: blur(8px);
         }
-        .note-modal-content {
-            background: white; margin: 10% auto; padding: 25px;
-            width: 400px; border-radius: 20px;
+
+        .modal-content {
+            background-color: var(--alb-curat);
+            margin: 8% auto;
+            padding: 2.5rem;
+            border-radius: 30px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            animation: slideDown 0.4s ease-out;
+            text-align: center;
         }
-        textarea { width: 100%; height: 150px; margin: 15px 0; padding: 10px; border-radius: 10px; border: 1px solid #ccc; }
+
+        @keyframes slideDown {
+            from { transform: translateY(-40px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-content h3 { 
+            font-family: var(--font-serif);
+            font-size: 2rem;
+            margin-bottom: 1.5rem; 
+            color: var(--text-maro-inchis);
+        }
+
+        /* Selector de Culoare Universal */
+        .color-section {
+            background: #f9f7f4;
+            padding: 15px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            border: 1px solid #eee;
+        }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            width: 50px;
+            height: 50px;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border-radius: 50%;
+            border: 4px solid white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        #colorHexLabel {
+            font-family: monospace;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-maro-deschis);
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 15px;
+            border: 2px solid #f0f0f0;
+            border-radius: 20px;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            margin-bottom: 25px;
+            outline: none;
+            resize: none;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus { border-color: var(--verde-sage); }
+
+        .modal-btns { display: flex; gap: 15px; }
+
+        .btn-save {
+            flex: 2;
+            background-color: var(--verde-sage);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-save:hover { background-color: var(--verde-sage-inchis); }
+
+        .btn-cancel {
+            flex: 1;
+            background-color: #f0f0f0;
+            color: var(--text-maro-deschis);
+            border: none;
+            padding: 14px;
+            border-radius: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -89,7 +301,7 @@
         <nav class="main-nav">
             <ul>
                 <li><a href="index.html">Acasă</a></li>
-                <li><a href="fisa-notare.html">Fișă de notare</a></li>
+                <li><a href="fisa-notare.html">Participanţi</a></li>
                 <li><a href="javascript:void(0)" onclick="logout()" style="color: #a47373;">Logout</a></li>
             </ul>
         </nav>
@@ -97,26 +309,44 @@
 
     <main class="calendar-app">
         <div class="calendar-nav">
-            <button class="nav-btn" onclick="changeMonth(-1)">❮ Înapoi</button>
-            <h2 id="monthDisplay">Luna Anul</h2>
-            <button class="nav-btn" onclick="changeMonth(1)">Înainte ❯</button>
+            <h2 id="monthDisplay">Ianuarie 2024</h2>
+            <div class="nav-controls">
+                <button class="btn-nav" onclick="changeMonth(-1)">❮ Înapoi</button>
+                <button class="btn-nav" onclick="goToToday()">Azi</button>
+                <button class="btn-nav" onclick="changeMonth(1)">Înainte ❯</button>
+            </div>
         </div>
 
-        <div class="calendar-days-grid" id="calendarGrid">
-            <div class="day-label">Lun</div><div class="day-label">Mar</div>
-            <div class="day-label">Mie</div><div class="day-label">Joi</div>
-            <div class="day-label">Vin</div><div class="day-label">Sâm</div>
-            <div class="day-label">Dum</div>
+        <div class="calendar-container">
+            <div class="calendar-grid">
+                <div class="day-label">Lun</div>
+                <div class="day-label">Mar</div>
+                <div class="day-label">Mie</div>
+                <div class="day-label">Joi</div>
+                <div class="day-label">Vin</div>
+                <div class="day-label">Sâm</div>
+                <div class="day-label">Dum</div>
             </div>
+            <div class="calendar-grid" id="calendarGrid">
+                </div>
+        </div>
     </main>
 
     <div id="noteModal" class="note-modal">
-        <div class="note-modal-content">
-            <h3 id="modalDateLabel">Notă pentru 01.01.2024</h3>
-            <textarea id="noteInput" placeholder="Scrie aici activități, observații sau mementouri..."></textarea>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn-cta" style="flex:1" onclick="saveNote()">Salvează</button>
-                <button class="btn-cta" style="flex:1; background:#ccc" onclick="closeNote()">Închide</button>
+        <div class="modal-content">
+            <h3 id="modalDateLabel">Notă Zi</h3>
+            
+            <p style="font-size: 0.8rem; font-weight: 700; margin-bottom: 8px; text-transform: uppercase;">Alege Culoarea:</p>
+            <div class="color-section">
+                <input type="color" id="customColorPicker" value="#81a473">
+                <span id="colorHexLabel">#81A473</span>
+            </div>
+
+            <textarea id="noteInput" placeholder="Scrie aici gândurile tale sau activitățile zilei..."></textarea>
+            
+            <div class="modal-btns">
+                <button class="btn-cancel" onclick="closeNote()">Anulează</button>
+                <button class="btn-save" onclick="saveNote()">Salvează în Jurnal</button>
             </div>
         </div>
     </div>
@@ -124,88 +354,129 @@
     <script>
         let currentDate = new Date();
         let selectedDateKey = "";
-        const calendarGrid = document.getElementById("calendarGrid");
-        const monthDisplay = document.getElementById("monthDisplay");
+        let selectedColor = "#81a473";
+
+        const colorPicker = document.getElementById("customColorPicker");
+        const colorLabel = document.getElementById("colorHexLabel");
+
+        // Sincronizare Picker Culoare
+        colorPicker.oninput = (e) => {
+            selectedColor = e.target.value;
+            colorLabel.innerText = selectedColor.toUpperCase();
+        };
 
         function renderCalendar() {
-            // Curățăm celulele vechi (păstrăm doar labels)
-            const labels = document.querySelectorAll('.day-label');
-            calendarGrid.innerHTML = "";
-            labels.forEach(l => calendarGrid.appendChild(l));
+            const grid = document.getElementById("calendarGrid");
+            const monthDisplay = document.getElementById("monthDisplay");
+            grid.innerHTML = "";
 
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
 
+            // Setăm titlul lunii (Limba Română)
             monthDisplay.innerText = new Intl.DateTimeFormat('ro-RO', { month: 'long', year: 'numeric' }).format(currentDate);
 
-            // Prima zi a lunii și numărul de zile
-            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             
-            // Ajustare pentru Luni (JS: 0=Dum, 1=Lun...)
-            let startingPoint = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+            // Ajustare pentru Luni ca prima zi (JS: 0=Dum, 1=Lun)
+            let startingPoint = firstDay === 0 ? 6 : firstDay - 1;
 
-            // Spații goale pentru zilele de dinainte de 1 ale lunii
+            // Zile "goale" din luna anterioară
             for (let i = 0; i < startingPoint; i++) {
-                const emptyCell = document.createElement("div");
-                emptyCell.className = "day-cell";
-                emptyCell.style.opacity = "0.3";
-                calendarGrid.appendChild(emptyCell);
+                const cell = document.createElement("div");
+                cell.className = "day-cell";
+                cell.style.opacity = "0.2";
+                grid.appendChild(cell);
             }
 
-            // Generăm zilele
-            const allNotes = JSON.parse(localStorage.getItem("calendarNotes") || "{}");
+            const allNotes = JSON.parse(localStorage.getItem("calendarJournalData") || "{}");
             const today = new Date();
 
+            // Generare zile lună curentă
             for (let day = 1; day <= daysInMonth; day++) {
                 const cell = document.createElement("div");
                 cell.className = "day-cell";
                 const dateKey = `${day}-${month + 1}-${year}`;
 
+                // Marcăm ziua de azi
                 if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
                     cell.classList.add("today");
                 }
 
                 cell.innerHTML = `<span class="day-number">${day}</span>`;
                 
-                // Dacă există notiță salvată
+                // Afișăm nota dacă există
                 if (allNotes[dateKey]) {
-                    cell.innerHTML += `<div class="note-preview">${allNotes[dateKey]}</div>`;
+                    const data = allNotes[dateKey];
+                    const chip = document.createElement("div");
+                    chip.className = "event-chip";
+                    chip.style.backgroundColor = data.color || "#81a473";
+                    chip.innerText = data.text;
+                    cell.appendChild(chip);
                 }
 
                 cell.onclick = () => openNote(dateKey);
-                calendarGrid.appendChild(cell);
+                grid.appendChild(cell);
             }
-        }
-
-        function changeMonth(dir) {
-            currentDate.setMonth(currentDate.getMonth() + dir);
-            renderCalendar();
         }
 
         function openNote(key) {
             selectedDateKey = key;
-            const allNotes = JSON.parse(localStorage.getItem("calendarNotes") || "{}");
-            document.getElementById("modalDateLabel").innerText = "Notă pentru: " + key;
-            document.getElementById("noteInput").value = allNotes[key] || "";
+            const allNotes = JSON.parse(localStorage.getItem("calendarJournalData") || "{}");
+            const existing = allNotes[key] || { text: "", color: "#81a473" };
+
+            document.getElementById("modalDateLabel").innerText = key.replace(/-/g, '.');
+            document.getElementById("noteInput").value = existing.text;
+            
+            // Setăm culoarea salvată în picker
+            selectedColor = existing.color;
+            colorPicker.value = selectedColor;
+            colorLabel.innerText = selectedColor.toUpperCase();
+
             document.getElementById("noteModal").style.display = "block";
         }
 
         function saveNote() {
-            const note = document.getElementById("noteInput").value;
-            const allNotes = JSON.parse(localStorage.getItem("calendarNotes") || "{}");
+            const text = document.getElementById("noteInput").value;
+            const allNotes = JSON.parse(localStorage.getItem("calendarJournalData") || "{}");
             
-            if (note.trim() === "") delete allNotes[selectedDateKey];
-            else allNotes[selectedDateKey] = note;
+            if (text.trim() === "") {
+                delete allNotes[selectedDateKey];
+            } else {
+                allNotes[selectedDateKey] = { 
+                    text: text, 
+                    color: selectedColor 
+                };
+            }
 
-            localStorage.setItem("calendarNotes", JSON.stringify(allNotes));
+            localStorage.setItem("calendarJournalData", JSON.stringify(allNotes));
             closeNote();
             renderCalendar();
         }
 
-        function closeNote() { document.getElementById("noteModal").style.display = "none"; }
-        function logout() { localStorage.removeItem("userRole"); window.location.href = "index.html"; }
+        function changeMonth(val) {
+            currentDate.setMonth(currentDate.getMonth() + val);
+            renderCalendar();
+        }
 
+        function goToToday() {
+            currentDate = new Date();
+            renderCalendar();
+        }
+
+        function closeNote() { 
+            document.getElementById("noteModal").style.display = "none"; 
+        }
+        
+        function logout() {
+            if(confirm("Sigur vrei să te deconectezi?")) {
+                localStorage.removeItem("userRole");
+                window.location.href = "index.html";
+            }
+        }
+
+        // Inițializare la încărcare
         window.onload = renderCalendar;
     </script>
 </body>

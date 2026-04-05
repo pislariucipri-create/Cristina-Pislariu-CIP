@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cristina Pîslariu | Cabinet Psihologie 1:1</title>
+    <title>Cristina Pîslariu | Cabinet individual de psihologie</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Quicksand:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- SUPABASE -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -15,7 +17,7 @@
                 <li><a href="#acasa" class="active">Acasă</a></li>
                 <li class="nav-psiholog" style="display: none;"><a href="calendar.html">Calendar</a></li>
                 <li class="nav-comun" style="display: none;"><a href="documente-parinte.html">Plan de intervenție</a></li>
-                <li class="nav-psiholog" style="display: none;"><a href="fisa-notare.html">Fișă de notare</a></li>
+                <li class="nav-psiholog" style="display: none;"><a href="fisa-notare.html">Participanţi</a></li>
                 <li><a href="contact.html">Contact</a></li>
                 <li id="auth-btn-container"><a href="javascript:void(0)" class="trigger-login">Sign In</a></li>
                 <li id="logout-btn-container" style="display: none;"><a href="javascript:void(0)" onclick="logout()" style="color: #a47373;">Logout</a></li>
@@ -42,18 +44,15 @@
                 <h2>Bun venit</h2>
                 <p>Introdu datele pentru a accesa contul</p>
             </div>
-
             <form id="loginForm">
                 <div class="input-group">
                     <label for="email">E-mail</label>
-                    <input type="email" id="email" placeholder="psiholog@test.com sau parinte@test.com" required>
+                    <input type="email" id="email" placeholder="" required>
                 </div>
-
                 <div class="input-group">
                     <label for="password">Parolă</label>
                     <input type="password" id="password" placeholder="••••••••" required>
                 </div>
-
                 <button type="submit" class="btn-login">Autentificare</button>
             </form>
         </div>
@@ -64,7 +63,7 @@
             <div class="contact-info">
                 <p><span>📞</span> 0735 101 358</p>
                 <p><span>💬</span> 0735 101 358</p>
-                <p><span>🌐</span> www.your site.com</p>
+                <p><span>🌐</span> www..com</p>
             </div>
             <div class="footer-puzzle">
                 <img src="footer-puzzles.webp" alt="Puzzle decorativ">
@@ -78,12 +77,26 @@
     </footer>
 
 <script>
-    const modal = document.getElementById("loginModal");
-    const loginForm = document.getElementById("loginForm");
-    const errorMsg = document.getElementById("login-error");
-    const closeBtn = document.querySelector(".close-modal");
-    const triggers = document.querySelectorAll(".trigger-login");
+    // ============================================================
+    // CONFIGURARE SUPABASE — înlocuiește cu datele tale!
+    // ============================================================
+    const SUPABASE_URL = 'https://yexvpbgkrzerkizscgfn.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_q52fh6Xa3yNm3q0akTrKKw_7AlxLrCU';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // ============================================================
+    // SESIUNE — stocăm în sessionStorage (se șterge la închiderea tab-ului)
+    // ============================================================
+    function getSession() {
+        try { return JSON.parse(sessionStorage.getItem('session') || 'null'); } 
+        catch { return null; }
+    }
+    function setSession(data) { sessionStorage.setItem('session', JSON.stringify(data)); }
+    function clearSession() { sessionStorage.removeItem('session'); }
+
+    // ============================================================
+    // UI
+    // ============================================================
     function updateUI(role) {
         const itemsPsiholog = document.querySelectorAll(".nav-psiholog");
         const itemsComun = document.querySelectorAll(".nav-comun");
@@ -95,7 +108,6 @@
             if(authBtnNav) authBtnNav.style.display = "none";
             if(logoutBtnNav) logoutBtnNav.style.display = "block";
             if(heroBtn) heroBtn.style.display = "none";
-            
             if (role === "psiholog") {
                 itemsPsiholog.forEach(el => el.style.display = "block");
                 itemsComun.forEach(el => el.style.display = "block");
@@ -113,67 +125,62 @@
     }
 
     window.onload = () => {
-        const savedRole = localStorage.getItem("userRole");
-        if (savedRole) updateUI(savedRole);
+        const session = getSession();
+        if (session) updateUI(session.role);
     };
 
-    triggers.forEach(btn => btn.onclick = () => {
-        modal.style.display = "block";
-        if(errorMsg) errorMsg.style.display = "none";
-    });
-    
+    // Modal
+    const modal = document.getElementById("loginModal");
+    const closeBtn = document.querySelector(".close-modal");
+    const triggers = document.querySelectorAll(".trigger-login");
+    triggers.forEach(btn => btn.onclick = () => { modal.style.display = "block"; });
     closeBtn.onclick = () => modal.style.display = "none";
+    window.onclick = (e) => { if (e.target === modal) modal.style.display = "none"; };
 
-loginForm.onsubmit = function(e) {
+    // ============================================================
+    // LOGIN — caută utilizatorul în tabelul users din Supabase
+    // ============================================================
+    document.getElementById("loginForm").onsubmit = async function(e) {
         e.preventDefault();
-        const email = document.getElementById("email").value.toLowerCase();
+        const email = document.getElementById("email").value.toLowerCase().trim();
         const pass = document.getElementById("password").value;
 
-        const staticUsers = {
-            "psiholog@test.com": { password: "cristina123", role: "psiholog" },
-            "parinte@test.com": { password: "familie2024", role: "parinte" }
-        };
+        const { data, error } = await _supabase
+            .from('users')
+            .select('*')
+            .eq('email', email)
+            .eq('password', pass)
+            .single();
 
-        const extraUsers = JSON.parse(localStorage.getItem("extraUsers") || "{}");
-        const allUsers = { ...staticUsers, ...extraUsers };
-
-        if (allUsers[email] && allUsers[email].password === pass) {
-            const role = allUsers[email].role;
-            localStorage.setItem("userRole", role);
-            localStorage.setItem("userEmail", email); // LINIE NOUĂ: Salvăm emailul
-            updateUI(role);
-            modal.style.display = "none";
-            loginForm.reset();
-        } else {
+        if (error || !data) {
             showToast("Email sau parolă incorectă!", "❌");
+            return;
         }
+
+        setSession({ role: data.role, email: data.email, userId: data.id });
+        updateUI(data.role);
+        modal.style.display = "none";
+        this.reset();
     };
 
     function logout() {
-        localStorage.removeItem("userRole");
+        clearSession();
+        updateUI(null);
         window.location.reload();
     }
 
-function showToast(message, icon = "✅") {
-    // Creăm elementul dacă nu există
-    let toast = document.getElementById('customToast');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'customToast';
-        toast.className = 'custom-notification';
-        document.body.appendChild(toast);
+    function showToast(message, icon = "✅") {
+        let toast = document.getElementById('customToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'customToast';
+            toast.className = 'custom-notification';
+            document.body.appendChild(toast);
+        }
+        toast.innerHTML = `<span class="notification-icon">${icon}</span> ${message}`;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
     }
-    
-    toast.innerHTML = `<span class="notification-icon">${icon}</span> ${message}`;
-    toast.classList.add('show');
-    
-    // Dispare automat după 3 secunde
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
-}
-
-
 </script>
 </body>
 </html>
