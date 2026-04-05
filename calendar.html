@@ -12,123 +12,68 @@
             --text-maro-inchis: #4e3629;
             --text-maro-deschis: #6d4a37;
             --verde-sage: #81a473;
-            --verde-sage-inchis: #6a8c5f;
             --crem-fundal: #fdfaf3;
             --alb-curat: #ffffff;
             --maro-lemn: #c79e7f;
-            --shadow-lemn: rgba(199, 158, 127, 0.4);
             --font-serif: 'Cormorant Garamond', serif;
             --font-sans: 'Quicksand', sans-serif;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-sans); background-color: var(--crem-fundal); color: var(--text-maro-deschis); }
 
-        body {
-            font-family: var(--font-sans);
-            background-color: var(--crem-fundal);
-            color: var(--text-maro-deschis);
-            line-height: 1.6;
-        }
-
-        header {
-            background-color: var(--alb-curat);
-            padding: 1rem 10%;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0; z-index: 1000;
-        }
-
+        header { background-color: var(--alb-curat); padding: 1rem 10%; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; }
         .main-nav ul { display: flex; justify-content: space-around; list-style: none; }
         .main-nav a { text-decoration: none; color: var(--text-maro-inchis); font-weight: 600; }
 
-        .calendar-app { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
+        .calendar-app { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+        .calendar-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: var(--alb-curat); padding: 20px 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
+        .calendar-nav h2 { font-family: var(--font-serif); font-size: 2.2rem; text-transform: capitalize; }
 
-        .calendar-nav {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 25px; background: var(--alb-curat);
-            padding: 20px 30px; border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(78, 54, 41, 0.05);
-        }
+        .btn-nav { background-color: var(--verde-sage); color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        .btn-nav:hover { background-color: #6a8c5f; }
 
-        .calendar-nav h2 { font-family: var(--font-serif); font-size: 2.2rem; color: var(--text-maro-inchis); }
-
-        .btn-nav {
-            background-color: var(--verde-sage); color: white; border: none;
-            padding: 10px 20px; border-radius: 15px; font-weight: 700;
-            cursor: pointer; transition: all 0.3s ease;
-        }
-
-        .calendar-container {
-            background: var(--alb-curat); border-radius: 25px;
-            overflow: hidden; box-shadow: 0 15px 40px rgba(78, 54, 41, 0.1);
-        }
-
+        .calendar-container { background: var(--alb-curat); border-radius: 25px; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.05); border: 1px solid #eee; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+        .day-label { background: var(--maro-lemn); color: white; text-align: center; padding: 12px; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; }
 
-        .day-label {
-            background: var(--maro-lemn); color: white; text-align: center;
-            padding: 12px; font-weight: 700; font-size: 0.85rem; text-transform: uppercase;
-        }
-
-        .day-cell {
-            min-height: 140px; border-right: 1px solid #f3efeb;
-            border-bottom: 1px solid #f3efeb; padding: 10px;
-            transition: background 0.2s; position: relative;
-        }
-
+        .day-cell { min-height: 150px; border-right: 1px solid #f3efeb; border-bottom: 1px solid #f3efeb; padding: 8px; transition: 0.2s; position: relative; overflow: hidden; }
         .day-cell:hover { background-color: #fdfaf3; cursor: pointer; }
-
-        .day-number {
-            font-family: var(--font-serif); font-size: 1.3rem; font-weight: 700;
-            color: var(--text-maro-inchis); width: 32px; height: 32px;
-            line-height: 32px; text-align: center; border-radius: 50%;
-        }
-
+        .day-number { font-family: var(--font-serif); font-size: 1.2rem; font-weight: 700; color: var(--text-maro-inchis); width: 30px; height: 30px; line-height: 30px; text-align: center; border-radius: 50%; margin-bottom: 5px; }
         .day-cell.today .day-number { background-color: var(--verde-sage); color: white; }
 
-        /* Chips pentru evenimente in grid-ul mare */
-        .event-mini-chip {
-            font-size: 0.65rem; padding: 2px 6px; margin-top: 3px;
-            border-radius: 4px; background: var(--verde-sage); color: white;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        /* Stil pentru CHIPS-urile cu ORA + TEXT */
+        .event-mini-chip { 
+            font-size: 0.7rem; 
+            padding: 3px 6px; 
+            margin-top: 3px; 
+            border-radius: 4px; 
+            color: white; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            font-weight: 600;
+            display: block;
         }
+        .event-mini-chip span { opacity: 0.9; font-weight: 400; margin-right: 3px; }
 
         /* MODAL PLANNER */
-        .note-modal {
-            display: none; position: fixed; z-index: 9999;
-            left: 0; top: 0; width: 100%; height: 100%;
-            background: rgba(78, 54, 41, 0.7); backdrop-filter: blur(8px);
-        }
+        .note-modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(78, 54, 41, 0.7); backdrop-filter: blur(8px); }
+        .modal-content { background-color: var(--alb-curat); margin: 2% auto; padding: 2rem; border-radius: 30px; width: 90%; max-width: 550px; max-height: 90vh; overflow-y: auto; position: relative; }
 
-        .modal-content {
-            background-color: var(--alb-curat); margin: 2% auto;
-            padding: 2rem; border-radius: 30px; width: 90%;
-            max-width: 600px; max-height: 90vh; overflow-y: auto;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-        }
-
-        .planner-grid { margin-top: 20px; text-align: left; }
+        .planner-grid { margin-top: 20px; }
+        .hour-row { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #f0f0f0; padding: 8px 0; }
+        .hour-label { width: 55px; font-weight: 700; color: var(--maro-lemn); font-size: 0.85rem; }
         
-        .hour-row {
-            display: flex; align-items: center; border-bottom: 1px solid #eee;
-            padding: 8px 0;
-        }
+        .color-input-wrapper { position: relative; width: 26px; height: 26px; border-radius: 50%; overflow: hidden; border: 2px solid #eee; flex-shrink: 0; }
+        .hour-color-picker { position: absolute; top: -5px; left: -5px; width: 40px; height: 40px; cursor: pointer; border: none; padding: 0; background: none; }
 
-        .hour-label { width: 60px; font-weight: 700; color: var(--maro-lemn); font-size: 0.9rem; }
-        
-        .hour-input {
-            flex: 1; border: none; outline: none; background: transparent;
-            font-family: var(--font-sans); padding: 5px 10px; font-size: 1rem;
-            color: var(--text-maro-inchis);
-        }
+        .hour-input { flex: 1; border: 1px solid transparent; outline: none; background: transparent; font-family: var(--font-sans); padding: 8px; font-size: 0.95rem; color: var(--text-maro-inchis); }
+        .hour-input:focus { border-bottom: 1px solid var(--verde-sage); }
 
-        .hour-input:focus { background: #f9f7f4; border-radius: 8px; }
-
-        .modal-btns { display: flex; gap: 15px; margin-top: 25px; position: sticky; bottom: 0; background: white; padding-top: 10px; }
-
+        .modal-btns { display: flex; gap: 15px; margin-top: 25px; position: sticky; bottom: -5px; background: white; padding: 10px 0; }
         .btn-save { flex: 2; background-color: var(--verde-sage); color: white; border: none; padding: 14px; border-radius: 15px; font-weight: 700; cursor: pointer; }
         .btn-cancel { flex: 1; background-color: #f0f0f0; border: none; padding: 14px; border-radius: 15px; cursor: pointer; }
-
     </style>
 </head>
 <body>
@@ -136,8 +81,8 @@
     <header>
         <nav class="main-nav">
             <ul>
-                <li><a href="#">Acasă</a></li>
-                <li><a href="#">Participanţi</a></li>
+                <li><a href="index.html">Acasă</a></li>
+                <li><a href="fisa-notare.html">Participanţi</a></li>
                 <li><a href="javascript:void(0)" onclick="logout()" style="color: #a47373;">Logout</a></li>
             </ul>
         </nav>
@@ -145,7 +90,7 @@
 
     <main class="calendar-app">
         <div class="calendar-nav">
-            <h2 id="monthDisplay">Ianuarie 2024</h2>
+            <h2 id="monthDisplay">Luna An</h2>
             <div class="nav-controls">
                 <button class="btn-nav" onclick="changeMonth(-1)">❮</button>
                 <button class="btn-nav" onclick="goToToday()">Azi</button>
@@ -160,21 +105,20 @@
                 <div class="day-label">Vin</div><div class="day-label">Sâm</div>
                 <div class="day-label">Dum</div>
             </div>
-            <div class="calendar-grid" id="calendarGrid"></div>
+            <div id="calendarGrid" class="calendar-grid"></div>
         </div>
     </main>
 
     <div id="noteModal" class="note-modal">
         <div class="modal-content">
-            <h3 id="modalDateLabel" style="font-family: var(--font-serif); font-size: 1.8rem;">Organizare Zi</h3>
-            <p id="modalFullDate" style="color: var(--maro-lemn); margin-bottom: 20px;"></p>
+            <h3 id="modalDateLabel" style="font-family: var(--font-serif); font-size: 1.8rem;">Programare Zi</h3>
+            <p id="modalFullDate" style="color: var(--maro-lemn); margin-bottom: 10px; font-weight: 600;"></p>
             
-            <div class="planner-grid" id="hoursContainer">
-                </div>
+            <div id="hoursContainer" class="planner-grid"></div>
             
             <div class="modal-btns">
-                <button class="btn-cancel" onclick="closeNote()">Închide</button>
-                <button class="btn-save" onclick="saveDayPlan()">Salvează Planul</button>
+                <button class="btn-cancel" onclick="closeNote()">Anulează</button>
+                <button class="btn-save" onclick="saveDayPlan()">Salvează în Calendar</button>
             </div>
         </div>
     </div>
@@ -183,6 +127,7 @@
         let currentDate = new Date();
         let selectedDateKey = "";
         const hoursToPlan = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
+        const defaultColor = "#81a473";
 
         function renderCalendar() {
             const grid = document.getElementById("calendarGrid");
@@ -191,47 +136,42 @@
 
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
-
+            
+            // Formatare luna in Romana
             monthDisplay.innerText = new Intl.DateTimeFormat('ro-RO', { month: 'long', year: 'numeric' }).format(currentDate);
 
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             let startingPoint = firstDay === 0 ? 6 : firstDay - 1;
 
-            // Zile goale
             for (let i = 0; i < startingPoint; i++) {
-                const cell = document.createElement("div");
-                cell.className = "day-cell";
-                cell.style.opacity = "0.2";
-                grid.appendChild(cell);
+                grid.innerHTML += `<div class="day-cell" style="opacity: 0.1"></div>`;
             }
 
-            const allData = JSON.parse(localStorage.getItem("calendarPlannerData") || "{}");
+            const allData = JSON.parse(localStorage.getItem("calendarProData") || "{}");
             const today = new Date();
 
             for (let day = 1; day <= daysInMonth; day++) {
-                const cell = document.createElement("div");
-                cell.className = "day-cell";
                 const dateKey = `${day}-${month + 1}-${year}`;
-
-                if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
-                    cell.classList.add("today");
-                }
-
+                const isToday = (day === today.getDate() && month === today.getMonth() && year === today.getFullYear());
+                
+                const cell = document.createElement("div");
+                cell.className = `day-cell ${isToday ? 'today' : ''}`;
                 cell.innerHTML = `<div class="day-number">${day}</div>`;
                 
-                // Afisăm primele 2 activități în calendar
                 if (allData[dateKey]) {
-                    const tasks = Object.values(allData[dateKey]).filter(t => t.trim() !== "");
-                    tasks.slice(0, 2).forEach(task => {
+                    // Sortăm orele înainte de afișare
+                    const sortedHours = Object.keys(allData[dateKey]).sort();
+                    
+                    sortedHours.forEach(hourKey => {
+                        const taskObj = allData[dateKey][hourKey];
                         const chip = document.createElement("div");
                         chip.className = "event-mini-chip";
-                        chip.innerText = task;
+                        chip.style.backgroundColor = taskObj.color || defaultColor;
+                        // Adăugăm ora în interiorul chip-ului
+                        chip.innerHTML = `<span>${hourKey}</span> ${taskObj.text}`;
                         cell.appendChild(chip);
                     });
-                    if(tasks.length > 2) {
-                        cell.innerHTML += `<div style="font-size:0.6rem; color:gray;">+ încă ${tasks.length-2}</div>`;
-                    }
                 }
 
                 cell.onclick = () => openPlanner(dateKey);
@@ -241,24 +181,25 @@
 
         function openPlanner(key) {
             selectedDateKey = key;
-            document.getElementById("modalDateLabel").innerText = "Planifică Ziua";
             document.getElementById("modalFullDate").innerText = key.replace(/-/g, ' / ');
-            
             const container = document.getElementById("hoursContainer");
             container.innerHTML = "";
             
-            const allData = JSON.parse(localStorage.getItem("calendarPlannerData") || "{}");
+            const allData = JSON.parse(localStorage.getItem("calendarProData") || "{}");
             const dayData = allData[key] || {};
 
             hoursToPlan.forEach(hour => {
                 const timeStr = `${hour < 10 ? '0'+hour : hour}:00`;
-                const val = dayData[timeStr] || "";
+                const saved = dayData[timeStr] || { text: "", color: defaultColor };
                 
                 container.innerHTML += `
                     <div class="hour-row">
                         <div class="hour-label">${timeStr}</div>
+                        <div class="color-input-wrapper">
+                            <input type="color" class="hour-color-picker" data-time="${timeStr}" value="${saved.color}">
+                        </div>
                         <input type="text" class="hour-input" data-time="${timeStr}" 
-                               placeholder="Adaugă activitate..." value="${val}">
+                               placeholder="Ex: Antrenament, Ședință..." value="${saved.text}">
                     </div>
                 `;
             });
@@ -267,42 +208,37 @@
         }
 
         function saveDayPlan() {
-            const allData = JSON.parse(localStorage.getItem("calendarPlannerData") || "{}");
+            const allData = JSON.parse(localStorage.getItem("calendarProData") || "{}");
             const dayData = {};
-            const inputs = document.querySelectorAll(".hour-input");
+            const rows = document.querySelectorAll(".hour-row");
             
-            let hasContent = false;
-            inputs.forEach(input => {
-                if(input.value.trim() !== "") {
-                    dayData[input.getAttribute("data-time")] = input.value.trim();
-                    hasContent = true;
+            let hasData = false;
+            rows.forEach(row => {
+                const time = row.querySelector(".hour-input").getAttribute("data-time");
+                const text = row.querySelector(".hour-input").value.trim();
+                const color = row.querySelector(".hour-color-picker").value;
+
+                if(text !== "") {
+                    dayData[time] = { text: text, color: color };
+                    hasData = true;
                 }
             });
 
-            if (hasContent) {
+            if (hasData) {
                 allData[selectedDateKey] = dayData;
             } else {
                 delete allData[selectedDateKey];
             }
 
-            localStorage.setItem("calendarPlannerData", JSON.stringify(allData));
+            localStorage.setItem("calendarProData", JSON.stringify(allData));
             closeNote();
             renderCalendar();
         }
 
-        function changeMonth(val) {
-            currentDate.setMonth(currentDate.getMonth() + val);
-            renderCalendar();
-        }
-
-        function goToToday() {
-            currentDate = new Date();
-            renderCalendar();
-        }
-
-        function closeNote() { 
-            document.getElementById("noteModal").style.display = "none"; 
-        }
+        function changeMonth(val) { currentDate.setMonth(currentDate.getMonth() + val); renderCalendar(); }
+        function goToToday() { currentDate = new Date(); renderCalendar(); }
+        function closeNote() { document.getElementById("noteModal").style.display = "none"; }
+        function logout() { location.reload(); }
 
         window.onload = renderCalendar;
     </script>
