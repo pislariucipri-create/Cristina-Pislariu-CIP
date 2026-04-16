@@ -42,34 +42,26 @@
         .day-number { font-family: var(--font-serif); font-size: 1.2rem; font-weight: 700; color: var(--text-maro-inchis); width: 30px; height: 30px; line-height: 30px; text-align: center; border-radius: 50%; margin-bottom: 5px; }
         .day-cell.today .day-number { background-color: var(--verde-sage); color: white; }
 
-        /* Stil pentru CHIPS-urile cu ORA + TEXT */
-        .event-mini-chip { 
-            font-size: 0.7rem; 
-            padding: 3px 6px; 
-            margin-top: 3px; 
-            border-radius: 4px; 
-            color: white; 
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            font-weight: 600;
-            display: block;
-        }
+        .event-mini-chip { font-size: 0.7rem; padding: 3px 6px; margin-top: 3px; border-radius: 4px; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; display: block; }
         .event-mini-chip span { opacity: 0.9; font-weight: 400; margin-right: 3px; }
 
         /* MODAL PLANNER */
         .note-modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(78, 54, 41, 0.7); backdrop-filter: blur(8px); }
-        .modal-content { background-color: var(--alb-curat); margin: 2% auto; padding: 2rem; border-radius: 30px; width: 90%; max-width: 550px; max-height: 90vh; overflow-y: auto; position: relative; }
+        .modal-content { background-color: var(--alb-curat); margin: 2% auto; padding: 2rem; border-radius: 30px; width: 95%; max-width: 850px; max-height: 90vh; overflow-y: auto; position: relative; }
 
         .planner-grid { margin-top: 20px; }
-        .hour-row { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #f0f0f0; padding: 8px 0; }
-        .hour-label { width: 55px; font-weight: 700; color: var(--maro-lemn); font-size: 0.85rem; }
+        .hour-row { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f0f0f0; padding: 10px 0; flex-wrap: wrap; }
+        .hour-label { width: 50px; font-weight: 700; color: var(--maro-lemn); font-size: 0.85rem; }
         
+        .repeat-box { display: flex; align-items: center; gap: 5px; background: #f9f9f9; padding: 5px 10px; border-radius: 8px; font-size: 0.75rem; }
+        .repeat-box select, .repeat-box input { border: 1px solid #ddd; border-radius: 4px; font-size: 0.75rem; padding: 2px; }
+        .repeat-count { width: 40px; }
+
+        .hour-input { flex: 1; min-width: 150px; border: 1px solid transparent; outline: none; background: transparent; font-family: var(--font-sans); padding: 8px; font-size: 0.95rem; color: var(--text-maro-inchis); }
+        .hour-input:focus { border-bottom: 1px solid var(--verde-sage); }
+
         .color-input-wrapper { position: relative; width: 26px; height: 26px; border-radius: 50%; overflow: hidden; border: 2px solid #eee; flex-shrink: 0; }
         .hour-color-picker { position: absolute; top: -5px; left: -5px; width: 40px; height: 40px; cursor: pointer; border: none; padding: 0; background: none; }
-
-        .hour-input { flex: 1; border: 1px solid transparent; outline: none; background: transparent; font-family: var(--font-sans); padding: 8px; font-size: 0.95rem; color: var(--text-maro-inchis); }
-        .hour-input:focus { border-bottom: 1px solid var(--verde-sage); }
 
         .modal-btns { display: flex; gap: 15px; margin-top: 25px; position: sticky; bottom: -5px; background: white; padding: 10px 0; }
         .btn-save { flex: 2; background-color: var(--verde-sage); color: white; border: none; padding: 14px; border-radius: 15px; font-weight: 700; cursor: pointer; }
@@ -81,9 +73,9 @@
     <header>
         <nav class="main-nav">
             <ul>
-                <li><a href="index.html">Acasă</a></li>
-                <li><a href="fisa-notare.html">Participanţi</a></li>
-                <li><a href="javascript:void(0)" onclick="logout()" style="color: #a47373;">Logout</a></li>
+                <li><a href="#">Acasă</a></li>
+                <li><a href="#">Participanţi</a></li>
+                <li><a href="javascript:void(0)" onclick="location.reload()" style="color: #a47373;">Reset</a></li>
             </ul>
         </nav>
     </header>
@@ -136,8 +128,6 @@
 
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
-            
-            // Formatare luna in Romana
             monthDisplay.innerText = new Intl.DateTimeFormat('ro-RO', { month: 'long', year: 'numeric' }).format(currentDate);
 
             const firstDay = new Date(year, month, 1).getDay();
@@ -160,15 +150,12 @@
                 cell.innerHTML = `<div class="day-number">${day}</div>`;
                 
                 if (allData[dateKey]) {
-                    // Sortăm orele înainte de afișare
                     const sortedHours = Object.keys(allData[dateKey]).sort();
-                    
                     sortedHours.forEach(hourKey => {
                         const taskObj = allData[dateKey][hourKey];
                         const chip = document.createElement("div");
                         chip.className = "event-mini-chip";
                         chip.style.backgroundColor = taskObj.color || defaultColor;
-                        // Adăugăm ora în interiorul chip-ului
                         chip.innerHTML = `<span>${hourKey}</span> ${taskObj.text}`;
                         cell.appendChild(chip);
                     });
@@ -193,13 +180,25 @@
                 const saved = dayData[timeStr] || { text: "", color: defaultColor };
                 
                 container.innerHTML += `
-                    <div class="hour-row">
+                    <div class="hour-row" data-time="${timeStr}">
                         <div class="hour-label">${timeStr}</div>
                         <div class="color-input-wrapper">
-                            <input type="color" class="hour-color-picker" data-time="${timeStr}" value="${saved.color}">
+                            <input type="color" class="hour-color-picker" value="${saved.color}">
                         </div>
-                        <input type="text" class="hour-input" data-time="${timeStr}" 
-                               placeholder="Ex: Antrenament, Ședință..." value="${saved.text}">
+                        <input type="text" class="hour-input" placeholder="Adaugă activitate..." value="${saved.text}">
+                        
+                        <div class="repeat-box">
+                            <span>Repetă:</span>
+                            <select class="repeat-type">
+                                <option value="none">Nu</option>
+                                <option value="daily">Zilnic</option>
+                                <option value="weekly">Săptămânal</option>
+                                <option value="monthly">Lunar</option>
+                            </select>
+                            <span>de</span>
+                            <input type="number" class="repeat-count" value="1" min="1" max="52">
+                            <span>ori</span>
+                        </div>
                     </div>
                 `;
             });
@@ -209,26 +208,47 @@
 
         function saveDayPlan() {
             const allData = JSON.parse(localStorage.getItem("calendarProData") || "{}");
-            const dayData = {};
             const rows = document.querySelectorAll(".hour-row");
             
-            let hasData = false;
+            const parts = selectedDateKey.split('-');
+            const baseDate = new Date(parts[2], parts[1] - 1, parts[0]);
+
             rows.forEach(row => {
-                const time = row.querySelector(".hour-input").getAttribute("data-time");
+                const time = row.getAttribute("data-time");
                 const text = row.querySelector(".hour-input").value.trim();
                 const color = row.querySelector(".hour-color-picker").value;
+                const repeatType = row.querySelector(".repeat-type").value;
+                const repeatCount = parseInt(row.querySelector(".repeat-count").value) || 1;
 
-                if(text !== "") {
-                    dayData[time] = { text: text, color: color };
-                    hasData = true;
+                if (text !== "") {
+                    // Salvare în ziua curentă
+                    if(!allData[selectedDateKey]) allData[selectedDateKey] = {};
+                    allData[selectedDateKey][time] = { text: text, color: color };
+
+                    // Logică Repetiție
+                    if (repeatType !== "none") {
+                        for (let i = 1; i <= repeatCount; i++) {
+                            let nextDate = new Date(baseDate);
+                            
+                            if (repeatType === "daily") {
+                                nextDate.setDate(baseDate.getDate() + i);
+                            } else if (repeatType === "weekly") {
+                                nextDate.setDate(baseDate.getDate() + (i * 7));
+                            } else if (repeatType === "monthly") {
+                                nextDate.setMonth(baseDate.getMonth() + i);
+                            }
+
+                            const nextKey = `${nextDate.getDate()}-${nextDate.getMonth() + 1}-${nextDate.getFullYear()}`;
+                            if (!allData[nextKey]) allData[nextKey] = {};
+                            allData[nextKey][time] = { text: text, color: color };
+                        }
+                    }
+                } else {
+                    if(allData[selectedDateKey] && allData[selectedDateKey][time]) {
+                        delete allData[selectedDateKey][time];
+                    }
                 }
             });
-
-            if (hasData) {
-                allData[selectedDateKey] = dayData;
-            } else {
-                delete allData[selectedDateKey];
-            }
 
             localStorage.setItem("calendarProData", JSON.stringify(allData));
             closeNote();
@@ -238,7 +258,6 @@
         function changeMonth(val) { currentDate.setMonth(currentDate.getMonth() + val); renderCalendar(); }
         function goToToday() { currentDate = new Date(); renderCalendar(); }
         function closeNote() { document.getElementById("noteModal").style.display = "none"; }
-        function logout() { location.reload(); }
 
         window.onload = renderCalendar;
     </script>

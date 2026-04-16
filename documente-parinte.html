@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plan de Intervenție | Cristina Pîslariu</title>
-    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;700&family=Dancing+Script:wght@500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -15,50 +14,51 @@
         .doc-title-section { text-align: center; margin-bottom: 5px; }
         .doc-title-section h1 { font-size: 26px; font-weight: bold; text-transform: uppercase; }
         .doc-date-cursive { font-family: 'Dancing Script', cursive; font-size: 22px; text-align: center; margin-bottom: 30px; }
+        
         .info-list-vertical { margin-bottom: 30px; }
         .info-group-title { font-family: 'Dancing Script', cursive; font-size: 24px; font-weight: 700; margin-bottom: 15px; display: block; border-bottom: 1px solid #000; width: fit-content; }
         .info-line { margin-bottom: 12px; font-size: 16px; font-weight: bold; display: flex; flex-wrap: wrap; align-items: baseline; width: 100%; }
         .info-line span { font-weight: normal; border-bottom: 1px dotted #999; padding-left: 8px; flex: 1; min-width: 200px; display: inline-block; word-break: break-word; }
-        .document-content { margin-top: 20px; border-top: 1px solid #000; padding-top: 20px; line-height: 1.8; min-height: 400px; font-size: 17px; text-align: justify; }
-        .toolbar { position: sticky; top: 0; z-index: 100; background: #f8f9fa; width: 100%; padding: 10px; display: flex; justify-content: center; gap: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 10px; font-family: 'Quicksand', sans-serif; }
-        .btn-action { padding: 8px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-family: 'Quicksand'; transition: 0.3s; }
+
+        /* TABEL ABA - Adăugat conform cerinței tale */
+        .section-title { font-weight: bold; text-transform: uppercase; margin-top: 25px; font-size: 16px; border-bottom: 1px solid #000; display: block; margin-bottom: 10px; }
+        .intervention-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 13px; table-layout: fixed; }
+        .intervention-table th { background: #f2f2f2; border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; }
+        .intervention-table td { border: 1px solid #000; padding: 8px; vertical-align: top; word-break: break-word; }
+
+        .document-content { margin-top: 20px; line-height: 1.8; min-height: 200px; font-size: 17px; text-align: justify; }
+        
+        .toolbar { position: sticky; top: 0; z-index: 100; background: #f8f9fa; width: 100%; padding: 10px; display: flex; justify-content: center; gap: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-family: 'Quicksand', sans-serif; }
+        .btn-action { padding: 8px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; }
         .btn-save { background: #2e7d32; color: white; }
         .btn-print { background: #6b8e23; color: white; }
-        .btn-print:hover, .btn-save:hover { opacity: 0.8; }
-        .edit-mode-active .editable-field { background-color: #fffdf0; outline: 1px dashed #ccc; }
-        header { font-family: 'Quicksand', sans-serif; width: 100%; }
-        @media print { .toolbar, header { display: none !important; } .word-container { padding: 0; background: none; } .paper { box-shadow: none; margin: 0; width: 100%; } .edit-mode-active .editable-field { background: none !important; outline: none !important; } }
+
+        .editable-field:focus { background-color: #fffdf0; outline: 1px dashed #ccc; }
+        @media print { .toolbar, header { display: none !important; } .word-container { padding: 0; background: none; } .paper { box-shadow: none; width: 100%; padding: 0; } }
     </style>
 </head>
 <body>
 
-    <header id="siteHeader">
-        <nav class="main-nav">
-            <ul>
-                <li><a href="index.html">Acasă</a></li>
-                <li id="backToAdmin" style="display:none;"><a href="fisa-notare.html">⬅ Înapoi la listă</a></li>
-                <li><a href="javascript:void(0)" onclick="logout()" style="color: #a47373;">Logout</a></li>
-            </ul>
-        </nav>
+    <header id="siteHeader" style="background:#4e3629; padding: 10px; text-align: center;">
+        <a href="fisa-notare.html" style="color:white; text-decoration:none; font-family:Quicksand; font-weight:bold;">⬅ Înapoi la listă</a>
     </header>
 
-    <main class="word-container" id="mainContainer">
-        <div class="toolbar" id="mainToolbar">
-            <button id="btnSave" class="btn-action btn-save" style="display:none;" onclick="saveFullDocument()">💾 Salvează modificările</button>
-            <button class="btn-action btn-print" onclick="window.print()">🖨️ PDF / Printează Planul</button>
+    <main class="word-container">
+        <div class="toolbar">
+            <button id="btnSave" class="btn-action btn-save" onclick="saveFullDocument()">💾 Salvează Planul</button>
+            <button class="btn-action btn-print" onclick="window.print()">🖨️ Descarcă PDF</button>
         </div>
 
         <article class="paper" id="editablePaper">
             <div class="doc-header-top">
-                <div class="header-left editable-field">
-                    <strong>Cristina Pîslariu-Cabinet individual de psihologie</strong><br>
+                <div class="editable-field">
+                    <strong>Cristina Pîslariu - Cabinet individual de psihologie</strong><br>
                     Str. Ion Creangă, nr 1, Fălticeni, Suceava<br>
                     CIF: 54275086
                 </div>
-                <div class="header-right editable-field">
-                    Contact:<br>
-                    Telefon: 0735 101 358<br>
-                    Email: cipislariucristina@gmail.com
+                <div style="text-align:right" class="editable-field">
+                    Contact: 0735 101 358<br>
+                    cipislariucristina@gmail.com
                 </div>
             </div>
 
@@ -75,136 +75,94 @@
                 <div class="info-line">Data nașterii: <span id="childBirth" class="editable-field">..........</span></div>
                 <div class="info-line">CNP: <span id="childCNP" class="editable-field">..........</span></div>
                 <div class="info-line">Persoane de contact: <span id="childContact" class="editable-field">..........</span></div>
-                <div class="info-line">Instituția frecventată: <span id="childInst" class="editable-field">..........</span></div>
-                <div class="info-line">Diagnostic(e): <span id="childDiag" class="editable-field">..........</span></div>
+                <div class="info-line">Diagnostic: <span id="childDiag" class="editable-field">..........</span></div>
                 <div class="info-line">Tratament medicamentos: <span id="childMeds" class="editable-field">..........</span></div>
-                <div class="info-line">Alte afecțiuni asociate: <span id="childOther" class="editable-field">..........</span></div>
-                <div class="info-line">Alergii / condiții speciale: <span id="childAllergies" class="editable-field">..........</span></div>
             </div>
+
+            <span class="section-title">4. Strategii de Intervenție</span>
+            <table class="intervention-table">
+                <thead>
+                    <tr>
+                        <th style="width: 20%;">Domeniu</th>
+                        <th style="width: 20%;">Subdomeniu</th>
+                        <th style="width: 25%;">Strategii (Antecedente / Înlocuire)</th>
+                        <th style="width: 15%;">Nivel Prompt</th>
+                        <th style="width: 20%;">Observații</th>
+                    </tr>
+                </thead>
+                <tbody id="interventionTableBody">
+                    </tbody>
+            </table>
 
             <div class="document-content editable-field" id="mainReportContent">
                 <p><strong>Obiective și recomandări:</strong></p>
-                <p>Introduceți aici detaliile...</p>
+                <p>Introduceți aici detaliile suplimentare...</p>
             </div>
         </article>
     </main>
 
 <script>
-    // ============================================================
-    // CONFIGURARE SUPABASE
-    // ============================================================
     const SUPABASE_URL = 'https://yexvpbgkrzerkizscgfn.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_q52fh6Xa3yNm3q0akTrKKw_7AlxLrCU';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const urlParams = new URLSearchParams(window.location.search);
-    const patientId = urlParams.get('id'); // UUID
-    const isEditMode = urlParams.get('edit') === 'true';
+    const patientId = urlParams.get('id');
+    let planRecordId = null;
 
-    const session = JSON.parse(sessionStorage.getItem('session') || 'null');
-    const role = session ? session.role : null;
+    window.onload = async function() {
+        if (!patientId) return;
 
-    let planRecordId = null; // ID înregistrare din intervention_plans
-
-window.onload = async function() {
-    if (isEditMode && role === 'psiholog') {
-        document.getElementById("btnSave").style.display = "block";
-        document.getElementById("backToAdmin").style.display = "inline-block";
-        enableFullEdit();
-    }
-
-    let targetPatientId = patientId; // pentru psiholog vine din URL
-
-    // Dacă e părinte, găsim ID-ul copilului după emailul lui
-    if (role === 'parinte' && session) {
-        const { data: patient } = await _supabase
-            .from('patients')
-            .select('id, name')
-            .eq('email', session.email)
-            .single();
-
-        if (!patient) {
-            showToast("Nu s-a găsit profilul copilului!", "❌");
-            return;
-        }
-        targetPatientId = patient.id;
-
-        if (document.getElementById("childName")) {
+        const { data: patient } = await _supabase.from('patients').select('*').eq('id', patientId).single();
+        if (patient) {
             document.getElementById("childName").innerText = patient.name;
+            document.getElementById("childDiag").innerText = patient.diagnosis || "ASD";
         }
-    }
 
-    if (!targetPatientId) return;
-
-    // Caută planul de intervenție cu ID-ul corect
-    const { data: plan } = await _supabase
-        .from('intervention_plans')
-        .select('*')
-        .eq('patient_id', targetPatientId)
-        .maybeSingle(); // nu aruncă eroare dacă nu există
-
-    if (plan) {
-        planRecordId = plan.id;
-        document.getElementById("editablePaper").innerHTML = plan.html_content;
-        // Reactivează editarea doar pentru psiholog
-        if (isEditMode && role === 'psiholog') {
-            document.querySelectorAll('.editable-field').forEach(f => f.contentEditable = "true");
+        const { data: plan } = await _supabase.from('intervention_plans').select('*').eq('patient_id', patientId).maybeSingle();
+        
+        if (plan) {
+            planRecordId = plan.id;
+            document.getElementById("editablePaper").innerHTML = plan.html_content;
+        } else {
+            await syncFromFisaNotare();
         }
-    } else {
-        // Fallback — populează template cu data curentă
-        if (document.getElementById("currentDate")) {
-            document.getElementById("currentDate").innerText = new Date().toLocaleDateString('ro-RO');
-        }
-    }
-};
+        
+        document.querySelectorAll('.editable-field, td').forEach(f => f.contentEditable = "true");
+    };
 
-    function enableFullEdit() {
-        document.getElementById("mainContainer").classList.add("edit-mode-active");
-        document.querySelectorAll('.editable-field').forEach(f => f.contentEditable = "true");
+    async function syncFromFisaNotare() {
+        const { data: fisa } = await _supabase.from('fisa_data').select('data').eq('patient_id', patientId).single();
+        if (!fisa || !fisa.data) return;
+
+        const tbody = document.getElementById("interventionTableBody");
+        tbody.innerHTML = "";
+
+        fisa.data.forEach(cat => {
+            cat.subItems.forEach(item => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td><b>${cat.catName}</b></td>
+                    <td>${item.name}</td>
+                    <td><b>Antecedente:</b> ... <br><b>Înlocuire:</b> ...</td>
+                    <td>Prompt verbal</td>
+                    <td>${item.detalii_extra || ''}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        });
+        document.getElementById("currentDate").innerText = new Date().toLocaleDateString('ro-RO');
     }
 
     async function saveFullDocument() {
-        const fields = document.querySelectorAll('.editable-field');
-        fields.forEach(f => f.contentEditable = "false");
         const htmlToSave = document.getElementById("editablePaper").innerHTML;
-
-        let result;
         if (planRecordId) {
-            result = await _supabase
-                .from('intervention_plans')
-                .update({ html_content: htmlToSave, updated_at: new Date().toISOString() })
-                .eq('id', planRecordId);
+            await _supabase.from('intervention_plans').update({ html_content: htmlToSave, updated_at: new Date().toISOString() }).eq('id', planRecordId);
         } else {
-            result = await _supabase
-                .from('intervention_plans')
-                .insert([{ patient_id: patientId, html_content: htmlToSave }])
-                .select()
-                .single();
-            if (result.data) planRecordId = result.data.id;
+            const { data } = await _supabase.from('intervention_plans').insert([{ patient_id: patientId, html_content: htmlToSave }]).select().single();
+            if (data) planRecordId = data.id;
         }
-
-        fields.forEach(f => f.contentEditable = "true");
-
-        if (result.error) {
-            showToast("Eroare la salvare: " + result.error.message, "❌");
-        } else {
-            showToast("Planul a fost salvat cu succes!");
-        }
-    }
-
-    function logout() { sessionStorage.removeItem('session'); window.location.href = "index.html"; }
-
-    function showToast(message, icon = "✅") {
-        let toast = document.getElementById('customToast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'customToast';
-            toast.className = 'custom-notification';
-            document.body.appendChild(toast);
-        }
-        toast.innerHTML = `<span class="notification-icon">${icon}</span> ${message}`;
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 3000);
+        alert("Salvat cu succes!");
     }
 </script>
 </body>
