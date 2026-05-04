@@ -4,26 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact | Cristina Pîslariu</title>
-    <link rel="stylesheet" href="style.css"> <style>
-        body {
-            background-color: #f9f7f2;
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .contact-page {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: 'Quicksand', sans-serif;
+            min-height: calc(100vh - 80px);
+            padding: 2rem 5%;
+            flex-direction: column;
+            gap: 2rem;
         }
 
-        /* Containerul principal pentru perspectivă 3D */
+        .contact-intro {
+            text-align: center;
+            max-width: 500px;
+        }
+
+        .contact-intro h1 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            margin-bottom: 0.5rem;
+        }
+
+        .contact-intro p {
+            opacity: 0.7;
+            margin-bottom: 0;
+        }
+
+        /* Card 3D flip */
         .card-container {
-            width: 500px;
+            width: min(500px, 90vw);
             height: 300px;
             perspective: 1000px;
             cursor: pointer;
         }
 
-        /* Elementul care se rotește */
         .card-inner {
             position: relative;
             width: 100%;
@@ -31,23 +46,21 @@
             text-align: center;
             transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
             transform-style: preserve-3d;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(78, 54, 41, 0.2);
+            border-radius: 20px;
         }
 
-        /* Clasa care declanșează rotația */
         .card-container.is-flipped .card-inner {
             transform: rotateY(180deg);
         }
 
-        /* Fețele cărții de vizită */
         .card-front, .card-back {
             position: absolute;
             width: 100%;
             height: 100%;
-            -webkit-backface-visibility: hidden; /* Pentru Safari */
+            -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
-            border-radius: 15px;
+            border-radius: 20px;
             overflow: hidden;
         }
 
@@ -57,37 +70,83 @@
             object-fit: cover;
         }
 
-        /* Partea din spate trebuie rotită din start */
-        .card-back {
-            transform: rotateY(180deg);
+        .card-back { transform: rotateY(180deg); }
+
+        .flip-hint {
+            font-size: 0.85rem;
+            color: var(--maro-lemn);
+            font-weight: 600;
+            margin-top: 0;
+            animation: pulse 2s ease-in-out infinite;
         }
 
-        .back-link {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            text-decoration: none;
-            color: #a47373;
-            font-weight: bold;
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
         }
     </style>
 </head>
 <body>
 
-    <a href="index.html" class="back-link">← Înapoi la site</a>
+    <header>
+        <div class="nav-wrapper">
+            <a href="index.html" class="nav-logo">Cristina <span>Pîslariu</span></a>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="index.html">Acasă</a></li>
+                    <li><a href="contact.html" class="active">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
 
-    <div class="card-container" onclick="this.classList.toggle('is-flipped')">
-        <div class="card-inner">
-            <div class="card-front">
-                <img src="fata-card.jpg" alt="Față Carte de Vizită">
-            </div>
-            <div class="card-back">
-                <img src="spate-card.jpg" alt="Spate Carte de Vizită">
+    <main class="contact-page">
+        <div class="contact-intro">
+            <h1>Carte de vizită</h1>
+            <p>Apasă pe card pentru a vedea detaliile de contact</p>
+        </div>
+
+        <div class="card-container" onclick="this.classList.toggle('is-flipped')" role="button" aria-label="Întoarce cartea de vizită" tabindex="0" onkeypress="if(event.key==='Enter') this.classList.toggle('is-flipped')">
+            <div class="card-inner">
+                <div class="card-front">
+                    <img src="fata-card.jpg" alt="Față Carte de Vizită — Cristina Pîslariu">
+                </div>
+                <div class="card-back">
+                    <img src="spate-card.jpg" alt="Spate Carte de Vizită — date de contact">
+                </div>
             </div>
         </div>
-    </div>
 
-    <p style="position: absolute; bottom: 50px; color: #888;">Apasă pe card pentru a-l întoarce</p>
+        <p class="flip-hint">👆 Apasă pe card pentru a-l întoarce</p>
+    </main>
+
+    <footer>
+        <div class="footer-top">
+            <div class="footer-brand">
+                <div class="brand-name">Cristina Pîslariu</div>
+                <p>Cabinet individual de psihologie — Fălticeni, Suceava.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Contact rapid</h4>
+                <div class="contact-info-footer">
+                    <p>📞 <a href="tel:+40735101358" style="color:inherit;">0735 101 358</a></p>
+                    <p>✉️ <a href="mailto:cipislariucristina@gmail.com" style="color:inherit;">cipislariucristina@gmail.com</a></p>
+                    <p>📍 Str. Ion Creangă, nr. 1, Fălticeni</p>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h4>Navigație</h4>
+                <ul>
+                    <li><a href="index.html">Acasă</a></li>
+                    <li><a href="confidentialitate.html">Politică confidențialitate</a></li>
+                    <li><a href="gdpr.html">GDPR</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>© 2025 Cristina Pîslariu — Cabinet individual de psihologie</span>
+        </div>
+    </footer>
 
 </body>
 </html>

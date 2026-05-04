@@ -3,173 +3,348 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Cristina Pîslariu — Cabinet individual de psihologie. Terapie ABA, evaluare și intervenție pentru copii cu autism și tulburări de dezvoltare. Fălticeni, Suceava.">
+    <meta name="keywords" content="psiholog copii, terapie ABA, autism, Falticeni, Suceava, Cristina Pislariu">
+    <meta name="author" content="Cristina Pîslariu">
+    <meta property="og:title" content="Cristina Pîslariu | Cabinet de Psihologie">
+    <meta property="og:description" content="Evaluare și terapie pentru copii cu autism și tulburări de dezvoltare. Pași mici spre schimbări mari.">
+    <meta property="og:type" content="website">
     <title>Cristina Pîslariu | Cabinet individual de psihologie</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Quicksand:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- SUPABASE -->
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
+    <!-- NAVIGAȚIE -->
     <header>
-        <nav class="main-nav">
-            <ul id="nav-links">
-                <li><a href="#acasa" class="active">Acasă</a></li>
-                <li class="nav-psiholog" style="display: none;"><a href="calendar.html">Calendar</a></li>
-                <li class="nav-comun" style="display: none;"><a href="documente-parinte.html">Plan de intervenție</a></li>
-                <li class="nav-psiholog" style="display: none;"><a href="fisa-notare.html">Participanţi</a></li>
-                <li><a href="contact.html">Contact</a></li>
-                <li id="auth-btn-container"><a href="javascript:void(0)" class="trigger-login">Sign In</a></li>
-                <li id="logout-btn-container" style="display: none;"><a href="javascript:void(0)" onclick="logout()" style="color: #a47373;">Logout</a></li>
-            </ul>
-        </nav>
+        <div class="nav-wrapper">
+            <a href="index.html" class="nav-logo">Cristina <span>Pîslariu</span></a>
+            <button class="hamburger" id="hamburger" aria-label="Meniu" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="main-nav" id="mainNav">
+                <ul id="nav-links">
+                    <li><a href="#acasa" class="active">Acasă</a></li>
+                    <li><a href="#servicii">Servicii</a></li>
+                    <li><a href="#despre">Despre</a></li>
+                    <li class="nav-psiholog" style="display:none;"><a href="calendar.html">Calendar</a></li>
+                    <li class="nav-comun" style="display:none;"><a href="documente-parinte.html">Plan intervenție</a></li>
+                    <li class="nav-psiholog" style="display:none;"><a href="fisa-notare.html">Participanți</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                    <li id="auth-btn-container"><a href="javascript:void(0)" class="trigger-login btn-cta" style="padding:0.5rem 1.2rem; font-size:0.88rem;">Intră în cont</a></li>
+                    <li id="logout-btn-container" style="display:none;"><a href="javascript:void(0)" onclick="logout()">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
     </header>
 
+    <!-- HERO -->
     <section class="hero" id="acasa">
         <div class="hero-image-container">
-            <img src="hero-illustration.webp" alt="Cristina Pislariu lucrând cu un copil">
+            <img src="hero-illustration.webp" alt="Cristina Pîslariu lucrând cu un copil" loading="eager">
         </div>
         <div class="hero-content">
+            <span class="hero-badge">Cabinet Individual de Psihologie</span>
             <h1>Cristina Pîslariu</h1>
-            <h2>Cabinet individual de psihologie</h2>
-            <p class="hero-tagline">Evaluare și terapie pentru copii cu autism și alte tulburări de dezvoltare. Ofer sprijin părintelui și copilului într-un mediu sigur, cald și profesionist.</p>
-            <a href="javascript:void(0)" class="btn-cta trigger-login" id="hero-auth-btn">Autentificare</a>
+            <h2>Pași mici spre schimbări mari</h2>
+            <p class="hero-tagline">Evaluare și terapie specializată pentru copii cu autism și tulburări de dezvoltare. Ofer sprijin profesionist, empatic și personalizat atât copilului, cât și familiei sale.</p>
+            <div class="hero-actions">
+                <a href="javascript:void(0)" class="btn-cta trigger-login" id="hero-auth-btn">
+                    <span>🔐</span> Autentificare
+                </a>
+                <a href="contact.html" class="btn-secondary">
+                    <span>📞</span> Contactează-mă
+                </a>
+            </div>
         </div>
     </section>
 
-    <div id="loginModal" class="modal">
-        <div class="login-box modal-content">
-            <span class="close-modal">&times;</span>
-            <div class="login-header">
-                <h2>Bun venit</h2>
-                <p>Introdu datele pentru a accesa contul</p>
+    <!-- SERVICII -->
+    <section class="services-section" id="servicii">
+        <div class="section-inner">
+            <div class="section-header reveal">
+                <h2>Servicii oferite</h2>
+                <p>Fiecare copil este unic. Programele de intervenție sunt adaptate nevoilor individuale ale fiecărui pacient.</p>
             </div>
-            <form id="loginForm">
+            <div class="services-grid">
+                <div class="service-card reveal">
+                    <span class="service-icon">🧩</span>
+                    <h3>Terapie ABA</h3>
+                    <p>Analiză aplicată a comportamentului (Applied Behavior Analysis) — metoda cu cea mai solidă bază științifică în tratamentul autismului.</p>
+                </div>
+                <div class="service-card reveal">
+                    <span class="service-icon">🌱</span>
+                    <h3>Dezvoltare comportamentală</h3>
+                    <p>Programe structurate pentru reducerea comportamentelor problematice și consolidarea comportamentelor adaptative.</p>
+                </div>
+                <div class="service-card reveal">
+                    <span class="service-icon">💬</span>
+                    <h3>Învățare și comunicare</h3>
+                    <p>Dezvoltarea abilităților de comunicare verbală și nonverbală, a limbajului funcțional și a interacțiunilor sociale.</p>
+                </div>
+                <div class="service-card reveal">
+                    <span class="service-icon">🤝</span>
+                    <h3>Abilități sociale</h3>
+                    <p>Programe de integrare socială, joc, empatie și relaționare cu colegii și familia, adaptate vârstei fiecărui copil.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DESPRE -->
+    <section class="about-section" id="despre">
+        <div class="about-inner">
+            <div class="about-text reveal">
+                <h2>Despre mine</h2>
+                <p>Sunt psiholog specializat în terapia comportamentală pentru copii cu tulburări din spectrul autist (TSA) și alte tulburări de neurodezvoltare.</p>
+                <p>Activez în cadrul Cabinetului Individual de Psihologie din Fălticeni, unde ofer servicii de evaluare psihologică, intervenție terapeutică și consiliere pentru părinți.</p>
+                <p>Abordarea mea se bazează pe metode validate științific, cu accent pe principiile ABA (Applied Behavior Analysis), aplicând programe individualizate adaptate nevoilor și potențialului fiecărui copil.</p>
+                <div class="about-stats">
+                    <div class="stat-box">
+                        <span class="stat-number">ABA</span>
+                        <span class="stat-label">Certificare</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-number">TSA</span>
+                        <span class="stat-label">Specializare</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-number">100%</span>
+                        <span class="stat-label">Personalizat</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-number">❤️</span>
+                        <span class="stat-label">Cu drag</span>
+                    </div>
+                </div>
+            </div>
+            <div class="about-image-side reveal">
+                <img src="hero-illustration.webp" alt="Cristina Pîslariu, psiholog" loading="lazy">
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACT BANNER -->
+    <section class="contact-preview">
+        <h2>Hai să lucrăm împreună</h2>
+        <p>Programează o ședință de evaluare sau o consultație gratuită pentru a discuta nevoile copilului tău.</p>
+        <a href="contact.html" class="btn-cta">📞 Contactează-mă acum</a>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-top">
+            <div class="footer-brand">
+                <div class="brand-name">Cristina Pîslariu</div>
+                <p>Cabinet individual de psihologie — Fălticeni, Suceava.<br>CIF: 54275086</p>
+                <div class="footer-puzzle" style="margin-top:1.2rem;">
+                    <img src="footer-puzzles.webp" alt="Puzzle decorativ" style="max-width:80px; opacity:0.7;">
+                </div>
+            </div>
+            <div class="footer-col">
+                <h4>Navigație</h4>
+                <ul>
+                    <li><a href="index.html">Acasă</a></li>
+                    <li><a href="#servicii">Servicii</a></li>
+                    <li><a href="#despre">Despre</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Contact</h4>
+                <div class="contact-info-footer">
+                    <p>📞 <a href="tel:+40735101358" style="color:inherit;">0735 101 358</a></p>
+                    <p>💬 <a href="https://wa.me/40735101358" style="color:inherit;" target="_blank" rel="noopener">WhatsApp</a></p>
+                    <p>✉️ <a href="mailto:cipislariucristina@gmail.com" style="color:inherit;">cipislariucristina@gmail.com</a></p>
+                    <p>📍 Str. Ion Creangă, nr. 1, Fălticeni</p>
+                    <p>🌐 <a href="https://psihoconect.com/" style="color:inherit;" target="_blank" rel="noopener">psihoconect.com</a></p>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>© 2025 Cristina Pîslariu — Cabinet individual de psihologie. Toate drepturile rezervate.</span>
+            <span>
+                <a href="confidentialitate.html">Politică de confidențialitate</a> ·
+                <a href="gdpr.html">GDPR</a>
+            </span>
+        </div>
+    </footer>
+
+    <!-- MODAL LOGIN -->
+    <div id="loginModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+        <div class="login-box modal-content">
+            <button class="close-modal" aria-label="Închide">&times;</button>
+            <div class="login-header">
+                <h2 id="loginTitle">Bun venit</h2>
+                <p>Introdu datele contului tău</p>
+            </div>
+            <form id="loginForm" novalidate>
                 <div class="input-group">
                     <label for="email">E-mail</label>
-                    <input type="email" id="email" placeholder="" required>
+                    <input type="email" id="email" placeholder="email@exemplu.com" required autocomplete="email">
                 </div>
                 <div class="input-group">
                     <label for="password">Parolă</label>
-                    <input type="password" id="password" placeholder="••••••••" required>
+                    <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
                 </div>
-                <button type="submit" class="btn-login">Autentificare</button>
+                <button type="submit" class="btn-login">Autentifică-te</button>
             </form>
         </div>
     </div>
 
-    <footer>
-        <div class="footer-content">
-            <div class="contact-info">
-                <p><span>📞</span> 0735 101 358</p>
-                <p><span>💬</span> 0735 101 358</p>
-                <p><span>🌐</span> https://psihoconect.com/</p>
-            </div>
-            <div class="footer-puzzle">
-                <img src="footer-puzzles.webp" alt="Puzzle decorativ">
-            </div>
-            <div class="footer-links">
-                <ul>
-                    <li><a href="contact.html">Contact</a></li>
-                </ul>
-            </div>
+    <!-- COOKIE BANNER GDPR -->
+    <div class="cookie-banner" id="cookieBanner">
+        <p class="cookie-text">
+            🍪 Folosim cookie-uri esențiale pentru funcționarea site-ului. Datele dumneavoastră sunt prelucrate conform <a href="confidentialitate.html">Politicii de confidențialitate</a> și regulamentului GDPR. Nu colectăm date fără consimțământul dumneavoastră.
+        </p>
+        <div class="cookie-actions">
+            <button class="btn-cookie-accept" onclick="acceptCookies()">Acceptă</button>
+            <button class="btn-cookie-decline" onclick="declineCookies()">Respinge</button>
         </div>
-    </footer>
+    </div>
 
 <script>
-    // ============================================================
-    // CONFIGURARE SUPABASE — înlocuiește cu datele tale!
-    // ============================================================
     const SUPABASE_URL = 'https://yexvpbgkrzerkizscgfn.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_q52fh6Xa3yNm3q0akTrKKw_7AlxLrCU';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // ============================================================
-    // SESIUNE — stocăm în sessionStorage (se șterge la închiderea tab-ului)
-    // ============================================================
-    function getSession() {
-        try { return JSON.parse(sessionStorage.getItem('session') || 'null'); } 
-        catch { return null; }
-    }
-    function setSession(data) { sessionStorage.setItem('session', JSON.stringify(data)); }
+    // ===== SESIUNE =====
+    function getSession() { try { return JSON.parse(sessionStorage.getItem('session') || 'null'); } catch { return null; } }
+    function setSession(d) { sessionStorage.setItem('session', JSON.stringify(d)); }
     function clearSession() { sessionStorage.removeItem('session'); }
 
-    // ============================================================
-    // UI
-    // ============================================================
+    // ===== UI =====
     function updateUI(role) {
-        const itemsPsiholog = document.querySelectorAll(".nav-psiholog");
-        const itemsComun = document.querySelectorAll(".nav-comun");
-        const authBtnNav = document.getElementById("auth-btn-container");
-        const logoutBtnNav = document.getElementById("logout-btn-container");
-        const heroBtn = document.getElementById("hero-auth-btn");
+        const itemsPsiholog = document.querySelectorAll('.nav-psiholog');
+        const itemsComun = document.querySelectorAll('.nav-comun');
+        const authBtn = document.getElementById('auth-btn-container');
+        const logoutBtn = document.getElementById('logout-btn-container');
+        const heroBtn = document.getElementById('hero-auth-btn');
 
         if (role) {
-            if(authBtnNav) authBtnNav.style.display = "none";
-            if(logoutBtnNav) logoutBtnNav.style.display = "block";
-            if(heroBtn) heroBtn.style.display = "none";
-            if (role === "psiholog") {
-                itemsPsiholog.forEach(el => el.style.display = "block");
-                itemsComun.forEach(el => el.style.display = "block");
+            if (authBtn) authBtn.style.display = 'none';
+            if (logoutBtn) logoutBtn.style.display = 'block';
+            if (heroBtn) heroBtn.style.display = 'none';
+            if (role === 'psiholog') {
+                itemsPsiholog.forEach(el => el.style.display = 'block');
+                itemsComun.forEach(el => el.style.display = 'block');
             } else {
-                itemsComun.forEach(el => el.style.display = "block");
-                itemsPsiholog.forEach(el => el.style.display = "none");
+                itemsComun.forEach(el => el.style.display = 'block');
+                itemsPsiholog.forEach(el => el.style.display = 'none');
             }
         } else {
-            if(authBtnNav) authBtnNav.style.display = "block";
-            if(logoutBtnNav) logoutBtnNav.style.display = "none";
-            if(heroBtn) heroBtn.style.display = "inline-block";
-            itemsPsiholog.forEach(el => el.style.display = "none");
-            itemsComun.forEach(el => el.style.display = "none");
+            if (authBtn) authBtn.style.display = 'block';
+            if (logoutBtn) logoutBtn.style.display = 'none';
+            if (heroBtn) heroBtn.style.display = 'inline-flex';
+            itemsPsiholog.forEach(el => el.style.display = 'none');
+            itemsComun.forEach(el => el.style.display = 'none');
         }
     }
 
-    window.onload = () => {
-        const session = getSession();
-        if (session) updateUI(session.role);
-    };
+    // ===== HAMBURGER MENU =====
+    const hamburger = document.getElementById('hamburger');
+    const mainNav = document.getElementById('mainNav');
 
-    // Modal
-    const modal = document.getElementById("loginModal");
-    const closeBtn = document.querySelector(".close-modal");
-    const triggers = document.querySelectorAll(".trigger-login");
-    triggers.forEach(btn => btn.onclick = () => { modal.style.display = "block"; });
-    closeBtn.onclick = () => modal.style.display = "none";
-    window.onclick = (e) => { if (e.target === modal) modal.style.display = "none"; };
+    hamburger.addEventListener('click', () => {
+        const isOpen = mainNav.classList.toggle('open');
+        hamburger.classList.toggle('open', isOpen);
+        hamburger.setAttribute('aria-expanded', isOpen);
+    });
 
-    // ============================================================
-    // LOGIN — caută utilizatorul în tabelul users din Supabase
-    // ============================================================
-    document.getElementById("loginForm").onsubmit = async function(e) {
+    // Închide meniul la click pe link
+    document.querySelectorAll('.main-nav a').forEach(link => {
+        link.addEventListener('click', () => {
+            mainNav.classList.remove('open');
+            hamburger.classList.remove('open');
+            hamburger.setAttribute('aria-expanded', 'false');
+        });
+    });
+
+    // ===== MODAL LOGIN =====
+    const modal = document.getElementById('loginModal');
+    const closeBtn = document.querySelector('.close-modal');
+    document.querySelectorAll('.trigger-login').forEach(btn => btn.onclick = () => { modal.style.display = 'block'; });
+    closeBtn.onclick = () => modal.style.display = 'none';
+    window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+
+    // Escape key close
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') modal.style.display = 'none'; });
+
+    // ===== LOGIN =====
+    document.getElementById('loginForm').onsubmit = async function(e) {
         e.preventDefault();
-        const email = document.getElementById("email").value.toLowerCase().trim();
-        const pass = document.getElementById("password").value;
+        const emailVal = document.getElementById('email').value.toLowerCase().trim();
+        const passVal = document.getElementById('password').value;
+        const btn = this.querySelector('.btn-login');
+
+        // Validare basic
+        if (!emailVal || !passVal) { showToast('Completează toate câmpurile!', '⚠️'); return; }
+
+        btn.textContent = 'Se verifică...';
+        btn.disabled = true;
 
         const { data, error } = await _supabase
             .from('users')
             .select('*')
-            .eq('email', email)
-            .eq('password', pass)
+            .eq('email', emailVal)
+            .eq('password', passVal)
             .single();
 
+        btn.textContent = 'Autentifică-te';
+        btn.disabled = false;
+
         if (error || !data) {
-            showToast("Email sau parolă incorectă!", "❌");
+            showToast('Email sau parolă incorectă!', '❌');
             return;
         }
 
         setSession({ role: data.role, email: data.email, userId: data.id });
         updateUI(data.role);
-        modal.style.display = "none";
+        modal.style.display = 'none';
         this.reset();
+        showToast('Bun venit! Autentificare reușită.', '✅');
     };
 
     function logout() {
         clearSession();
         updateUI(null);
-        window.location.reload();
+        showToast('Ai fost deconectat.', '👋');
+        setTimeout(() => window.location.reload(), 1200);
     }
 
-    function showToast(message, icon = "✅") {
+    // ===== COOKIE BANNER =====
+    function checkCookies() {
+        const consent = localStorage.getItem('cookieConsent');
+        if (consent) document.getElementById('cookieBanner').classList.add('hidden');
+    }
+
+    function acceptCookies() {
+        localStorage.setItem('cookieConsent', 'accepted');
+        document.getElementById('cookieBanner').classList.add('hidden');
+    }
+
+    function declineCookies() {
+        localStorage.setItem('cookieConsent', 'declined');
+        document.getElementById('cookieBanner').classList.add('hidden');
+    }
+
+    // ===== SCROLL REVEAL =====
+    function initReveal() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    }
+
+    // ===== TOAST =====
+    function showToast(message, icon = '✅') {
         let toast = document.getElementById('customToast');
         if (!toast) {
             toast = document.createElement('div');
@@ -177,10 +352,19 @@
             toast.className = 'custom-notification';
             document.body.appendChild(toast);
         }
-        toast.innerHTML = `<span class="notification-icon">${icon}</span> ${message}`;
+        toast.innerHTML = `<span class="notification-icon">${icon}</span><span>${message}</span>`;
         toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 3000);
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(() => toast.classList.remove('show'), 3500);
     }
+
+    // ===== INIT =====
+    window.onload = () => {
+        const session = getSession();
+        if (session) updateUI(session.role);
+        checkCookies();
+        initReveal();
+    };
 </script>
 </body>
 </html>
