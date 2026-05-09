@@ -48,6 +48,7 @@
             <ul>
                 <li><a href="index.html">Acasă</a></li>
                 <li><a href="fisa-notare.html" class="active">Participanţi</a></li>
+                <li><a href="arhiva.html" style="color: #c79e7f;">🗄️ Arhivă</a></li>
                 <li id="logout-btn-container"><a href="javascript:void(0)" onclick="logout()" style="color: #a47373;">Logout</a></li>
             </ul>
         </nav>
@@ -212,23 +213,64 @@ async function addPatient() {
     }
 
     // ============================================================
-    // ȘTERGE PACIENT
+    // ȘTERGE PACIENT → ARHIVARE COMPLETĂ ÎNAINTE DE ȘTERGERE
     // ============================================================
     async function deletePatient(patientId) {
-        if (!confirm("Ești sigură că vrei să ștergi acest profil? Se vor șterge și toate datele asociate.")) return;
+        if (!confirm("Profilul va fi mutat în Arhivă (nu șters definitiv). Continui?")) return;
 
-        // Cascade delete (ON DELETE CASCADE în schema SQL)
-        const { error } = await _supabase
-            .from('patients')
-            .delete()
-            .eq('id', patientId);
+        showToast("Se arhivează datele...", "📦");
 
-        if (error) {
-            showToast("Eroare la ștergere: " + error.message, "❌");
+        // 1. Citim datele pacientului
+        const { data: patient } = await _supabase
+            .from('patients').select('*').eq('id', patientId).single();
+
+        if (!patient) { showToast("Eroare: pacientul nu a fost găsit.", "❌"); return; }
+
+        // 2. Citim fișa de notare
+        const { data: fisa } = await _supabase
+            .from('fisa_data').select('data').eq('patient_id', patientId).maybeSingle();
+
+        // 3. Citim raportul
+        const { data: raport } = await _supabase
+            .from('reports').select('content').eq('patient_id', patientId).maybeSingle();
+
+        // 4. Citim planul de intervenție
+        const { data: plan } = await _supabase
+            .from('intervention_plans').select('html_content').eq('patient_id', patientId).maybeSingle();
+
+        // 5. Salvăm totul în tabelul de arhivă
+        const archivePayload = {
+            original_patient_id: patientId,
+            name: patient.name,
+            age: patient.age,
+            email: patient.email,
+            pass: patient.pass,
+            photo: patient.photo,
+            fisa_data: fisa ? fisa.data : [],
+            report_content: raport ? raport.content : null,
+            plan_html: plan ? plan.html_content : null,
+            archived_at: new Date().toISOString()
+        };
+
+        const { error: archErr } = await _supabase
+            .from('archived_patients')
+            .insert([archivePayload]);
+
+        if (archErr) {
+            showToast("Eroare la arhivare: " + archErr.message + " — asigură-te că tabelul 'archived_patients' există în Supabase.", "❌");
             return;
         }
 
-        showToast("Profil șters.");
+        // 6. Ștergem pacientul (cascade va șterge fisa_data, reports, intervention_plans)
+        const { error: delErr } = await _supabase
+            .from('patients').delete().eq('id', patientId);
+
+        if (delErr) {
+            showToast("Arhivat, dar eroare la ștergere: " + delErr.message, "⚠️");
+            return;
+        }
+
+        showToast("Profil arhivat cu succes! Îl găsești în secțiunea 🗄️ Arhivă.", "✅");
         loadPatients();
     }
 

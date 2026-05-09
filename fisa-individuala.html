@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fișă Participanți | Cristina Pîslariu</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <title>Fișă Individuală | Cristina Pîslariu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -19,110 +19,217 @@
             --font-sans: 'Quicksand', sans-serif;
             --succes-bg: #d3f9d8;
         }
-        body { font-family: var(--font-sans); background-color: var(--crem-fundal); color: var(--text-maro-deschis); margin: 0; padding: 0; }
-        header { background-color: var(--alb-curat); padding: 1rem 10%; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; }
-        .nav-bar { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: auto; }
-        .btn-back { text-decoration: none; color: var(--text-maro-inchis); font-weight: 700; display: flex; align-items: center; gap: 5px; transition: 0.3s; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-sans); background-color: var(--crem-fundal); color: var(--text-maro-deschis); }
+
+        /* ── HEADER ── */
+        header { background: var(--alb-curat); padding: 0.9rem 5%; box-shadow: 0 2px 10px rgba(0,0,0,0.06); position: sticky; top: 0; z-index: 500; }
+        .nav-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+        .btn-back { text-decoration: none; color: var(--text-maro-inchis); font-weight: 700; display: flex; align-items: center; gap: 5px; transition: 0.2s; white-space: nowrap; }
         .btn-back:hover { color: var(--verde-sage); transform: translateX(-3px); }
-        .main-container { max-width: 1000px; margin: 40px auto; background: var(--alb-curat); padding: 40px; border-radius: 30px; box-shadow: 0 10px 30px rgba(78, 54, 41, 0.05); }
-        h2 { font-family: var(--font-serif); font-size: 2.5rem; color: var(--text-maro-inchis); margin-top: 0; }
-        .btn-main { background-color: var(--verde-sage); color: white; padding: 0.8rem 2rem; border: none; border-radius: 30px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(129, 164, 115, 0.2); }
-        .btn-main:hover { background-color: var(--verde-sage-inchis); transform: translateY(-2px); }
-        
-        .excel-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; border-radius: 15px; overflow: hidden; border: 1px solid #eee; }
-        .excel-table th { background-color: #f8f9fa; color: var(--text-maro-inchis); padding: 18px; font-family: var(--font-serif); font-size: 1.3rem; border-bottom: 2px solid var(--verde-sage); }
-        .excel-table td { padding: 15px; border-bottom: 1px solid #f0f0f0; text-align: center; }
+        #pageTitle { font-family: var(--font-serif); color: var(--verde-sage-inchis); font-size: 1.3rem; }
 
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(78, 54, 41, 0.6); backdrop-filter: blur(5px); }
-        .modal-content { 
-            background: var(--alb-curat); 
-            margin: 5vh auto; 
-            padding: 40px; 
-            width: 95%; 
-            max-width: 1250px; 
-            border-radius: 30px; 
-            position: relative; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-            max-height: 85vh; 
-            overflow-y: auto; 
+        /* ── LAYOUT ── */
+        .page-wrap { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 60px); }
+
+        /* ── SIDEBAR SEDINTE ── */
+        .sidebar { background: var(--alb-curat); border-right: 1px solid #f0ebe3; padding: 20px; overflow-y: auto; }
+        .sidebar-title { font-family: var(--font-serif); font-size: 1.4rem; color: var(--text-maro-inchis); margin-bottom: 15px; }
+
+        .btn-new-session {
+            width: 100%; padding: 12px; border: 2px dashed var(--verde-sage); background: transparent;
+            color: var(--verde-sage); font-family: var(--font-sans); font-weight: 700; font-size: 0.9rem;
+            border-radius: 15px; cursor: pointer; transition: 0.2s; margin-bottom: 18px;
         }
+        .btn-new-session:hover { background: #f0f7ee; }
 
-        .modal-content::-webkit-scrollbar { width: 8px; }
-        .modal-content::-webkit-scrollbar-thumb { background: var(--verde-sage); border-radius: 10px; }
+        .session-item {
+            padding: 12px 15px; border-radius: 14px; cursor: pointer;
+            transition: 0.2s; margin-bottom: 8px; border: 2px solid transparent;
+            position: relative;
+        }
+        .session-item:hover { background: var(--crem-fundal); }
+        .session-item.active { background: #eef5eb; border-color: var(--verde-sage); }
+        .session-nr { font-size: 0.72rem; font-weight: 700; color: var(--maro-lemn); text-transform: uppercase; letter-spacing: 0.5px; }
+        .session-date { font-weight: 700; color: var(--text-maro-inchis); font-size: 0.95rem; margin: 2px 0; }
+        .session-obs-preview { font-size: 0.78rem; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+        .session-score-pill {
+            display: inline-block; margin-top: 5px;
+            font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+            background: #eef5eb; color: var(--verde-sage-inchis);
+        }
+        .btn-del-session {
+            position: absolute; right: 8px; top: 8px; background: none; border: none;
+            color: #ffab91; cursor: pointer; font-size: 0.95rem; opacity: 0; transition: 0.2s; padding: 2px 5px;
+        }
+        .session-item:hover .btn-del-session { opacity: 1; }
+        .btn-del-session:hover { color: #d32f2f; }
 
-        .cat-container { display: flex; align-items: center; gap: 10px; background: var(--crem-fundal); padding: 8px 15px; border-radius: 20px; transition: 0.3s; }
-        .cat-name { cursor: pointer; color: var(--text-maro-inchis); font-weight: 700; flex-grow: 1; }
-        .btn-edit-name { cursor: pointer; color: var(--maro-lemn); background: none; border: none; font-size: 1.1rem; }
-        
-        .mini-table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
-        .mini-table th { color: var(--text-maro-inchis); padding: 12px; border-bottom: 1px solid var(--maro-lemn); font-size: 0.95rem; }
-        .mini-table td { padding: 12px; border-bottom: 1px solid #eee; font-size: 0.9rem; word-wrap: break-word; }
+        /* ── MAIN CONTENT ── */
+        .main-content { padding: 30px 35px; overflow-y: auto; }
 
-        .btn-score { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; font-weight: 700; margin: 0 2px; transition: 0.2s; }
-        .btn-minus { background: #fee; color: #c33; }
-        .btn-p { background: #fff4e5; color: #d68100; }
+        .empty-state { text-align: center; padding: 6rem 2rem; color: #ccc; }
+        .empty-state .icon { font-size: 4rem; display: block; margin-bottom: 1rem; }
+        .empty-state h3 { font-size: 1.3rem; color: #bbb; margin-bottom: 0.5rem; }
+
+        /* ── SESSION HEADER ── */
+        .session-header-card {
+            background: var(--alb-curat); border-radius: 20px; padding: 20px 25px;
+            margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+            display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+        }
+        .session-header-card .s-badge {
+            background: var(--verde-sage); color: white; font-size: 0.8rem; font-weight: 700;
+            padding: 4px 14px; border-radius: 20px; white-space: nowrap;
+        }
+        .date-input-wrap { display: flex; align-items: center; gap: 8px; }
+        .date-input-wrap label { font-weight: 700; font-size: 0.85rem; color: var(--maro-lemn); white-space: nowrap; }
+        input[type="date"] {
+            border: 1px solid #e8e0d8; border-radius: 10px; padding: 7px 12px;
+            font-family: var(--font-sans); font-size: 0.9rem; color: var(--text-maro-inchis);
+            background: var(--crem-fundal); cursor: pointer; outline: none;
+        }
+        input[type="date"]:focus { border-color: var(--verde-sage); }
+        .obs-generala {
+            flex: 1; min-width: 200px; border: 1px solid #e8e0d8; border-radius: 10px;
+            padding: 8px 12px; font-family: var(--font-sans); font-size: 0.88rem;
+            color: var(--text-maro-inchis); background: var(--crem-fundal); resize: none;
+            outline: none; transition: 0.2s; height: 38px;
+        }
+        .obs-generala:focus { border-color: var(--verde-sage); }
+
+        /* ── BUTOANE ACTIUNE ── */
+        .actions-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+        .btn-main {
+            background-color: var(--verde-sage); color: white; padding: 0.7rem 1.5rem;
+            border: none; border-radius: 25px; font-weight: 700; font-family: var(--font-sans);
+            cursor: pointer; transition: 0.2s; font-size: 0.88rem; white-space: nowrap;
+        }
+        .btn-main:hover { background-color: var(--verde-sage-inchis); transform: translateY(-1px); }
+        .btn-secondary-action {
+            background: white; color: var(--text-maro-inchis); padding: 0.7rem 1.5rem;
+            border: 1.5px solid #e8e0d8; border-radius: 25px; font-weight: 700;
+            font-family: var(--font-sans); cursor: pointer; transition: 0.2s; font-size: 0.88rem;
+        }
+        .btn-secondary-action:hover { border-color: var(--verde-sage); color: var(--verde-sage); }
+        .save-indicator { color: var(--verde-sage); font-size: 0.85rem; font-weight: 700; }
+
+        /* ── CATEGORII ── */
+        .category-block {
+            background: var(--alb-curat); border-radius: 18px; margin-bottom: 18px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.04); overflow: hidden;
+            border: 1px solid #f0ebe3;
+        }
+        .cat-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 15px 20px; cursor: pointer; transition: 0.2s;
+            border-left: 4px solid var(--verde-sage);
+            user-select: none;
+        }
+        .cat-header:hover { background: #fdfaf3; }
+        .cat-header-left { display: flex; align-items: center; gap: 12px; }
+        .cat-nr { font-size: 0.75rem; font-weight: 700; color: var(--maro-lemn); width: 24px; }
+        .cat-title { font-weight: 700; font-size: 1rem; color: var(--text-maro-inchis); }
+        .cat-progress { font-size: 0.78rem; color: #aaa; margin-left: 8px; }
+        .cat-chevron { transition: 0.3s; font-size: 0.8rem; color: var(--maro-lemn); }
+        .cat-chevron.open { transform: rotate(90deg); }
+        .cat-header-right { display: flex; gap: 8px; align-items: center; }
+        .btn-rename-cat { background: none; border: none; color: var(--maro-lemn); cursor: pointer; font-size: 1rem; padding: 4px; }
+        .btn-del-cat { background: none; border: none; color: #ffab91; cursor: pointer; font-size: 1rem; padding: 4px; transition: 0.2s; }
+        .btn-del-cat:hover { color: #d32f2f; }
+
+        .cat-body { display: none; border-top: 1px solid #f5f0ea; }
+        .cat-body.open { display: block; }
+
+        /* ── TABEL OBIECTIVE ── */
+        .obj-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .obj-table th {
+            background: #f8f6f2; color: var(--text-maro-inchis); padding: 10px 14px;
+            font-size: 0.8rem; font-weight: 700; text-align: left; border-bottom: 1px solid #eee;
+        }
+        .obj-table td { padding: 10px 14px; border-bottom: 1px solid #f5f0ea; font-size: 0.88rem; vertical-align: middle; word-break: break-word; }
+        .obj-table tr:last-child td { border-bottom: none; }
+        .obj-table tr.completed-row { background: #f0fdf4; }
+
+        [contenteditable="true"] { outline: none; border-bottom: 1px dashed transparent; padding: 2px 4px; border-radius: 4px; transition: 0.2s; min-height: 18px; display: inline-block; min-width: 40px; }
+        [contenteditable="true"]:focus { border-bottom-color: var(--verde-sage); background: #fffef0; }
+
+        .scores-cell { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+        .score-char { display: inline-block; width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 6px; font-weight: 700; font-size: 0.85rem; }
+        .score-char.plus { background: #e8f5e9; color: #2e7d32; }
+        .score-char.minus { background: #fce8e8; color: #c62828; }
+        .score-char.partial { background: #fff3e0; color: #e65100; }
+
+        .btn-score { width: 28px; height: 28px; border-radius: 7px; border: 1px solid #e0e0e0; cursor: pointer; font-weight: 700; font-size: 0.85rem; transition: 0.15s; flex-shrink: 0; }
+        .btn-minus { background: #fce8e8; color: #c62828; }
+        .btn-minus:hover { background: #c62828; color: white; }
+        .btn-p { background: #fff3e0; color: #e65100; }
+        .btn-p:hover { background: #e65100; color: white; }
         .btn-plus { background: #e8f5e9; color: #2e7d32; }
-        .btn-undo { background: none; border: none; color: #c33; cursor: pointer; font-size: 1.2rem; padding: 0 5px; }
+        .btn-plus:hover { background: #2e7d32; color: white; }
+        .btn-undo { background: none; border: none; color: #ccc; cursor: pointer; font-size: 1rem; padding: 2px; flex-shrink: 0; }
+        .btn-undo:hover { color: #c62828; }
 
-        .completed-row { background-color: var(--succes-bg) !important; }
-        .success-badge { background: var(--verde-sage); color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; display: inline-block; margin-top: 5px; }
-        .save-indicator { color: var(--verde-sage); font-size: 0.85rem; margin-left: 15px; }
-        
-        [contenteditable="true"] { border: 1px transparent solid; padding: 5px; transition: 0.3s; min-height: 20px; }
-        [contenteditable="true"]:focus { outline: none; border-bottom: 1px solid var(--verde-sage); background: #fffef0; border-radius: 4px; }
+        .success-badge { background: var(--verde-sage); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; margin-left: 6px; }
+
+        .btn-del-row { background: none; border: none; color: #f0c0b0; cursor: pointer; font-size: 0.9rem; padding: 4px; transition: 0.2s; }
+        .btn-del-row:hover { color: #d32f2f; }
+
+        .add-obj-row { padding: 10px 14px; }
+        .btn-add-obj { background: none; border: 1.5px dashed var(--maro-lemn); color: var(--maro-lemn); padding: 6px 16px; border-radius: 20px; cursor: pointer; font-family: var(--font-sans); font-size: 0.82rem; font-weight: 700; transition: 0.2s; }
+        .btn-add-obj:hover { background: #fdf5ed; }
+
+        /* ── TOAST ── */
+        .custom-notification {
+            position: fixed; bottom: 25px; right: 25px; background: var(--text-maro-inchis);
+            color: white; padding: 14px 22px; border-radius: 15px; font-weight: 600;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15); z-index: 9999; display: none;
+            font-family: var(--font-sans); font-size: 0.9rem; max-width: 320px;
+        }
+        .custom-notification.show { display: flex; align-items: center; gap: 10px; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .page-wrap { grid-template-columns: 1fr; }
+            .sidebar { border-right: none; border-bottom: 1px solid #f0ebe3; max-height: 260px; }
+            .main-content { padding: 20px 15px; }
+        }
     </style>
 </head>
 <body>
 
-    <header>
-        <nav class="nav-bar">
-            <a href="fisa-notare.html" class="btn-back">← Înapoi la listă</a>
-            <h3 id="pageTitle" style="margin:0; font-family: var(--font-serif); color: var(--verde-sage-inchis);"></h3>
-        </nav>
-    </header>
-
-    <div class="main-container">
-        <h2>Fișă Participanţi</h2>
-        <div class="controls" style="display:flex; align-items:center; gap:15px;">
-            <button class="btn-main" onclick="addRow()">+ Adaugă Obiectiv Nou</button>
-            <button class="btn-main" onclick="saveData()" style="background: #5c7a4e;">💾 Salvează</button>
-            <span id="saveIndicator" class="save-indicator" style="display:none;">✓ Salvat</span>
+<header>
+    <nav class="nav-bar">
+        <a href="fisa-notare.html" class="btn-back">← Înapoi la listă</a>
+        <h3 id="pageTitle"></h3>
+        <div style="display:flex; gap:8px;">
+            <button class="btn-main" onclick="saveData()" style="font-size:0.82rem; padding:0.5rem 1.2rem;">💾 Salvează</button>
+            <span id="saveIndicator" class="save-indicator" style="display:none; line-height:2.2;">✓ Salvat</span>
         </div>
-        
-        <table class="excel-table">
-            <thead>
-                <tr>
-                    <th style="width: 80px;">Nr. crt</th>
-                    <th>Categorie</th>
-                    <th>Observații</th>
-                </tr>
-            </thead>
-            <tbody id="mainTableBody"></tbody>
-        </table>
-    </div>
+    </nav>
+</header>
 
-    <div id="catModal" class="modal">
-        <div class="modal-content">
-            <span style="position: absolute; right: 25px; top: 20px; font-size: 30px; cursor: pointer; color: var(--maro-lemn);" onclick="closeModal()">&times;</span>
-            <h3 id="modalTitle" style="font-family: var(--font-serif); font-size: 2rem; color: var(--text-maro-inchis); margin-top: 0;">Detalii</h3>
-            <button class="btn-main" onclick="addMiniRow()">+ Adaugă Sub-Obiectiv</button>
-            <table class="mini-table">
-                <thead>
-                    <tr>
-                        <th style="width: 18%;">Obiectiv Specific</th>
-                        <th style="width: 12%;">Notare</th>
-                        <th style="width: 12%;">Istoric</th>
-                        <th style="width: 18%;">Locație</th>
-                        <th style="width: 18%;">Persoană</th>
-                        <th style="width: 22%;">Detalii</th>
-                    </tr>
-                </thead>
-                <tbody id="miniTableBody"></tbody>
-            </table>
-            <br>
-            <button class="btn-main" onclick="closeModal()" style="background: var(--maro-lemn); width: 100%;">Salvează și Închide</button>
+<div class="page-wrap">
+
+    <!-- SIDEBAR: lista sedinte -->
+    <aside class="sidebar">
+        <div class="sidebar-title">📅 Ședințe</div>
+        <button class="btn-new-session" onclick="createNewSession()">+ Ședință nouă</button>
+        <div id="sessionList"></div>
+    </aside>
+
+    <!-- MAIN: continut sedinta activa -->
+    <main class="main-content" id="mainContent">
+        <div class="empty-state">
+            <span class="icon">📋</span>
+            <h3>Nicio ședință selectată</h3>
+            <p>Creează o ședință nouă sau selectează una din lista din stânga.</p>
         </div>
-    </div>
+    </main>
+
+</div>
+
+<div id="customToast" class="custom-notification"></div>
 
 <script>
     const SUPABASE_URL = 'https://yexvpbgkrzerkizscgfn.supabase.co';
@@ -132,176 +239,390 @@
     const urlParams = new URLSearchParams(window.location.search);
     const patientId = urlParams.get('id');
 
-    let currentEditingRowIndex = null;
-    let tableData = []; 
+    // ================================================================
+    // STRUCTURA DATE:
+    // fisa_data.data = [ ...sedinte ]
+    // sedinta = {
+    //   id: string (uuid local),
+    //   date: "YYYY-MM-DD",
+    //   obs: string (observatie generala),
+    //   categories: [
+    //     { id, catName, subItems: [
+    //       { id, name, scores, locatie, persoana, detalii_extra, completed }
+    //     ]}
+    //   ]
+    // }
+    // ================================================================
+
+    let sessions = [];          // toate sedintele
+    let currentSessionId = null; // id sedinta activa
     let fisaRecordId = null;
 
+    function uid() { return Math.random().toString(36).substr(2, 9); }
+
+    // ── INIT ──────────────────────────────────────────────────────
     async function init() {
         if (!patientId) { window.location.href = "fisa-notare.html"; return; }
+
         const { data: patient } = await _supabase.from('patients').select('name').eq('id', patientId).single();
         if (patient) document.getElementById('pageTitle').innerText = patient.name;
 
-        const { data: fisa } = await _supabase.from('fisa_data').select('*').eq('patient_id', patientId).single();
+        const { data: fisa } = await _supabase.from('fisa_data').select('*').eq('patient_id', patientId).maybeSingle();
         if (fisa) {
             fisaRecordId = fisa.id;
-            tableData = fisa.data || [];
-            renderMainTable();
+            const raw = fisa.data || [];
+            // Detectăm dacă datele sunt în formatul vechi (array de categorii) sau nou (array de sedinte)
+            if (raw.length > 0 && raw[0].catName !== undefined) {
+                // FORMAT VECHI → migrăm automat într-o singură ședință
+                sessions = [{
+                    id: uid(),
+                    date: new Date().toISOString().split('T')[0],
+                    obs: 'Import date anterioare',
+                    categories: raw
+                }];
+                showToast("Date anterioare importate într-o singură ședință.", "🔄");
+            } else {
+                sessions = raw;
+            }
         }
+
+        renderSidebar();
+        if (sessions.length > 0) selectSession(sessions[0].id);
     }
 
-    function renderMainTable() {
-        const tbody = document.getElementById("mainTableBody");
-        tbody.innerHTML = "";
-        tableData.forEach((rowData, rowIndex) => {
-            const row = tbody.insertRow();
-            row.innerHTML = `
-                <td><b style="color: var(--maro-lemn)">${rowIndex + 1}</b></td>
-                <td>
-                    <div class="cat-container">
-                        <div class="cat-name" onclick="openTable(${rowIndex})">${rowData.catName || 'Apasă pentru detalii'}</div>
-                        <button class="btn-edit-name" onclick="renameCategory(${rowIndex})">✎</button>
-                    </div>
-                </td>
-                <td contenteditable="true" onblur="updateObs(${rowIndex}, this.innerText)" style="font-style: italic; color: #999;">${rowData.obs || ''}</td>
+    // ── SIDEBAR ───────────────────────────────────────────────────
+    function renderSidebar() {
+        const list = document.getElementById('sessionList');
+        list.innerHTML = '';
+        if (sessions.length === 0) {
+            list.innerHTML = '<p style="text-align:center; color:#ccc; font-size:0.85rem; margin-top:20px;">Nicio ședință încă</p>';
+            return;
+        }
+        // Cele mai recente primele
+        [...sessions].reverse().forEach((s, revIdx) => {
+            const idx = sessions.length - 1 - revIdx;
+            const d = s.date ? new Date(s.date).toLocaleDateString('ro-RO', { day: '2-digit', month: 'long', year: 'numeric' }) : '—';
+            const totalObj = (s.categories || []).reduce((acc, c) => acc + (c.subItems || []).length, 0);
+            const completedObj = (s.categories || []).reduce((acc, c) => acc + (c.subItems || []).filter(i => i.completed).length, 0);
+            const div = document.createElement('div');
+            div.className = 'session-item' + (s.id === currentSessionId ? ' active' : '');
+            div.id = 'sitem-' + s.id;
+            div.onclick = () => selectSession(s.id);
+            div.innerHTML = `
+                <button class="btn-del-session" onclick="deleteSession('${s.id}', event)" title="Șterge ședința">🗑</button>
+                <div class="session-nr">Ședința ${idx + 1}</div>
+                <div class="session-date">📅 ${d}</div>
+                ${s.obs ? `<div class="session-obs-preview">${s.obs}</div>` : ''}
+                <div class="session-score-pill">${completedObj}/${totalObj} obiective</div>
             `;
+            list.appendChild(div);
         });
     }
 
-    function addRow() {
-        tableData.push({ catName: "Categorie nouă", obs: "", subItems: [] });
-        renderMainTable();
+    // ── SELECTARE SEDINTA ─────────────────────────────────────────
+    function selectSession(id) {
+        currentSessionId = id;
+        document.querySelectorAll('.session-item').forEach(el => el.classList.remove('active'));
+        const el = document.getElementById('sitem-' + id);
+        if (el) el.classList.add('active');
+        renderMain();
     }
 
-    function renameCategory(rowIndex) {
-        const newName = prompt("Numele categoriei:", tableData[rowIndex].catName || "");
-        if (newName) { tableData[rowIndex].catName = newName; renderMainTable(); }
+    // ── CREARE SEDINTA NOUA ───────────────────────────────────────
+    function createNewSession() {
+        const s = {
+            id: uid(),
+            date: new Date().toISOString().split('T')[0],
+            obs: '',
+            categories: []
+        };
+        sessions.push(s);
+        renderSidebar();
+        selectSession(s.id);
     }
 
-    function updateObs(rowIndex, val) { tableData[rowIndex].obs = val; }
-
-    function openTable(rowIndex) {
-        currentEditingRowIndex = rowIndex;
-        document.getElementById("modalTitle").innerText = tableData[rowIndex].catName || "Detalii";
-        document.getElementById("catModal").style.display = "block";
-        document.body.style.overflow = "hidden";
-        renderMiniTable();
+    // ── STERGERE SEDINTA ──────────────────────────────────────────
+    function deleteSession(id, e) {
+        e.stopPropagation();
+        if (!confirm("Ștergi această ședință și toate datele ei?")) return;
+        sessions = sessions.filter(s => s.id !== id);
+        if (currentSessionId === id) {
+            currentSessionId = null;
+            document.getElementById('mainContent').innerHTML = `
+                <div class="empty-state">
+                    <span class="icon">📋</span>
+                    <h3>Nicio ședință selectată</h3>
+                    <p>Selectează sau creează o ședință nouă.</p>
+                </div>`;
+        }
+        renderSidebar();
     }
 
-    function closeModal() { 
-        document.getElementById("catModal").style.display = "none"; 
-        document.body.style.overflow = "auto"; 
+    // ── RENDER MAIN ───────────────────────────────────────────────
+    function renderMain() {
+        const s = sessions.find(x => x.id === currentSessionId);
+        if (!s) return;
+        const mc = document.getElementById('mainContent');
+        const sessionIndex = sessions.findIndex(x => x.id === currentSessionId) + 1;
+
+        mc.innerHTML = `
+            <!-- Header sedinta -->
+            <div class="session-header-card">
+                <span class="s-badge">Ședința ${sessionIndex}</span>
+                <div class="date-input-wrap">
+                    <label>📅 Data:</label>
+                    <input type="date" id="sessionDate" value="${s.date || ''}" onchange="updateSessionMeta()">
+                </div>
+                <textarea class="obs-generala" id="sessionObs" placeholder="Observații generale despre ședință..." onblur="updateSessionMeta()">${s.obs || ''}</textarea>
+            </div>
+
+            <!-- Actiuni -->
+            <div class="actions-bar">
+                <button class="btn-main" onclick="addCategory()">+ Adaugă Categorie</button>
+                <button class="btn-secondary-action" onclick="saveData()">💾 Salvează acum</button>
+            </div>
+
+            <!-- Categorii -->
+            <div id="categoriesContainer"></div>
+        `;
+
+        renderCategories(s);
     }
 
-    function renderMiniTable() {
-        const tbody = document.getElementById("miniTableBody");
-        tbody.innerHTML = "";
-        const items = tableData[currentEditingRowIndex].subItems || [];
-        items.forEach((item, index) => {
-            const row = tbody.insertRow();
+    function updateSessionMeta() {
+        const s = sessions.find(x => x.id === currentSessionId);
+        if (!s) return;
+        s.date = document.getElementById('sessionDate').value;
+        s.obs = document.getElementById('sessionObs').value;
+        renderSidebar();
+        // Restaurăm clasa active
+        const el = document.getElementById('sitem-' + currentSessionId);
+        if (el) el.classList.add('active');
+    }
+
+    // ── RENDER CATEGORII ──────────────────────────────────────────
+    function renderCategories(s) {
+        const container = document.getElementById('categoriesContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        (s.categories || []).forEach((cat, catIdx) => {
+            const total = (cat.subItems || []).length;
+            const done = (cat.subItems || []).filter(i => i.completed).length;
+
+            const block = document.createElement('div');
+            block.className = 'category-block';
+            block.id = 'cat-' + cat.id;
+
+            block.innerHTML = `
+                <div class="cat-header" onclick="toggleCat('${cat.id}')">
+                    <div class="cat-header-left">
+                        <span class="cat-nr">${catIdx + 1}.</span>
+                        <span class="cat-title">${cat.catName || 'Categorie'}</span>
+                        <span class="cat-progress">(${done}/${total})</span>
+                    </div>
+                    <div class="cat-header-right">
+                        <button class="btn-rename-cat" onclick="renameCategory('${cat.id}', event)" title="Redenumește">✎</button>
+                        <button class="btn-del-cat" onclick="deleteCategory('${cat.id}', event)" title="Șterge categorie">🗑</button>
+                        <span class="cat-chevron" id="chev-${cat.id}">▶</span>
+                    </div>
+                </div>
+                <div class="cat-body open" id="body-${cat.id}">
+                    <table class="obj-table">
+                        <thead>
+                            <tr>
+                                <th style="width:22%;">Obiectiv specific</th>
+                                <th style="width:26%;">Scoruri</th>
+                                <th style="width:16%;">Locație</th>
+                                <th style="width:16%;">Persoană</th>
+                                <th style="width:16%;">Detalii</th>
+                                <th style="width:4%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-${cat.id}"></tbody>
+                    </table>
+                    <div class="add-obj-row">
+                        <button class="btn-add-obj" onclick="addObjective('${cat.id}')">+ Adaugă obiectiv</button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(block);
+            renderObjectives(cat);
+        });
+    }
+
+    function toggleCat(catId) {
+        const body = document.getElementById('body-' + catId);
+        const chev = document.getElementById('chev-' + catId);
+        body.classList.toggle('open');
+        chev.classList.toggle('open');
+    }
+
+    // ── RENDER OBIECTIVE ──────────────────────────────────────────
+    function renderObjectives(cat) {
+        const tbody = document.getElementById('tbody-' + cat.id);
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        (cat.subItems || []).forEach((item, itemIdx) => {
+            const row = document.createElement('tr');
             if (item.completed) row.classList.add('completed-row');
+
+            // Construim scorurile vizual
+            const scoresHtml = buildScoresHtml(item.scores || '');
+
             row.innerHTML = `
-                <td contenteditable="true" onblur="updateMiniField(${index}, 'name', this.innerText)" style="font-weight:bold">${item.name || ''}</td>
                 <td>
-                    <button class="btn-score btn-minus" onclick="addPoint(${index}, '-')">-</button>
-                    <button class="btn-score btn-p" onclick="addPoint(${index}, 'P')">P</button>
-                    <button class="btn-score btn-plus" onclick="addPoint(${index}, '+')">+</button>
+                    <span contenteditable="true" 
+                          onblur="updateField('${cat.id}', ${itemIdx}, 'name', this.innerText)"
+                          style="font-weight:700;">${item.name || ''}</span>
+                    ${item.completed ? '<span class="success-badge">✓ SUCCES</span>' : ''}
                 </td>
                 <td>
-                    <div style="display:flex; align-items:center; justify-content:center; gap:5px;">
-                        <span style="letter-spacing: 2px; font-weight: 700; color: var(--text-maro-inchis);">${item.scores || ''}</span>
-                        <button class="btn-undo" onclick="removeLastPoint(${index})" title="Șterge ultima notă">⌫</button>
+                    <div class="scores-cell">
+                        <button class="btn-score btn-minus" onclick="addScore('${cat.id}', ${itemIdx}, '-')">−</button>
+                        <button class="btn-score btn-p" onclick="addScore('${cat.id}', ${itemIdx}, 'P')">P</button>
+                        <button class="btn-score btn-plus" onclick="addScore('${cat.id}', ${itemIdx}, '+')">+</button>
+                        <span style="margin-left:4px;">${scoresHtml}</span>
+                        <button class="btn-undo" onclick="removeScore('${cat.id}', ${itemIdx})" title="Șterge ultimul scor">⌫</button>
                     </div>
-                    ${item.completed ? '<span class="success-badge">SUCCES</span>' : ''}
                 </td>
-                <td contenteditable="true" onblur="updateMiniField(${index}, 'locatie', this.innerText)">${item.locatie || ''}</td>
-                <td contenteditable="true" onblur="updateMiniField(${index}, 'persoana', this.innerText)">${item.persoana || ''}</td>
-                <td contenteditable="true" onblur="updateMiniField(${index}, 'detalii_extra', this.innerText)">${item.detalii_extra || ''}</td>
+                <td><span contenteditable="true" onblur="updateField('${cat.id}', ${itemIdx}, 'locatie', this.innerText)">${item.locatie || ''}</span></td>
+                <td><span contenteditable="true" onblur="updateField('${cat.id}', ${itemIdx}, 'persoana', this.innerText)">${item.persoana || ''}</span></td>
+                <td><span contenteditable="true" onblur="updateField('${cat.id}', ${itemIdx}, 'detalii_extra', this.innerText)">${item.detalii_extra || ''}</span></td>
+                <td><button class="btn-del-row" onclick="deleteObjective('${cat.id}', ${itemIdx})" title="Șterge">🗑</button></td>
             `;
+            tbody.appendChild(row);
         });
     }
 
-    function addMiniRow() {
-        if (!tableData[currentEditingRowIndex].subItems) tableData[currentEditingRowIndex].subItems = [];
-        tableData[currentEditingRowIndex].subItems.push({ 
-            name: "Obiectiv nou", 
-            scores: "", 
-            locatie: "", 
-            persoana: "", 
-            detalii_extra: "", 
-            completed: false 
-        });
-        renderMiniTable();
+    function buildScoresHtml(scores) {
+        return scores.split('').map(c => {
+            if (c === '+') return `<span class="score-char plus">+</span>`;
+            if (c === '-') return `<span class="score-char minus">−</span>`;
+            if (c === 'P') return `<span class="score-char partial">P</span>`;
+            return '';
+        }).join('');
     }
 
-    function updateMiniField(index, field, val) {
-        tableData[currentEditingRowIndex].subItems[index][field] = val;
+    // ── CATEGORII CRUD ────────────────────────────────────────────
+    function addCategory() {
+        const s = sessions.find(x => x.id === currentSessionId);
+        if (!s) return;
+        const name = prompt("Numele categoriei (ex: Limbaj, Motricitate...):");
+        if (!name) return;
+        if (!s.categories) s.categories = [];
+        s.categories.push({ id: uid(), catName: name, subItems: [] });
+        renderMain();
     }
 
-    function addPoint(index, char) {
-        const item = tableData[currentEditingRowIndex].subItems[index];
+    function renameCategory(catId, e) {
+        e.stopPropagation();
+        const s = sessions.find(x => x.id === currentSessionId);
+        const cat = (s.categories || []).find(c => c.id === catId);
+        if (!cat) return;
+        const name = prompt("Noul nume:", cat.catName);
+        if (name) { cat.catName = name; renderMain(); }
+    }
+
+    function deleteCategory(catId, e) {
+        e.stopPropagation();
+        if (!confirm("Ștergi această categorie și toate obiectivele ei?")) return;
+        const s = sessions.find(x => x.id === currentSessionId);
+        s.categories = (s.categories || []).filter(c => c.id !== catId);
+        renderMain();
+    }
+
+    // ── OBIECTIVE CRUD ────────────────────────────────────────────
+    function addObjective(catId) {
+        const s = sessions.find(x => x.id === currentSessionId);
+        const cat = (s.categories || []).find(c => c.id === catId);
+        if (!cat) return;
+        if (!cat.subItems) cat.subItems = [];
+        cat.subItems.push({ id: uid(), name: 'Obiectiv nou', scores: '', locatie: '', persoana: '', detalii_extra: '', completed: false });
+        renderObjectives(cat);
+        renderSidebar();
+        const el = document.getElementById('sitem-' + currentSessionId);
+        if (el) el.classList.add('active');
+    }
+
+    function deleteObjective(catId, itemIdx) {
+        const s = sessions.find(x => x.id === currentSessionId);
+        const cat = (s.categories || []).find(c => c.id === catId);
+        if (!cat) return;
+        cat.subItems.splice(itemIdx, 1);
+        renderObjectives(cat);
+        renderSidebar();
+        const el = document.getElementById('sitem-' + currentSessionId);
+        if (el) el.classList.add('active');
+    }
+
+    function updateField(catId, itemIdx, field, value) {
+        const s = sessions.find(x => x.id === currentSessionId);
+        const cat = (s.categories || []).find(c => c.id === catId);
+        if (!cat || !cat.subItems[itemIdx]) return;
+        cat.subItems[itemIdx][field] = value;
+    }
+
+    // ── SCORURI ───────────────────────────────────────────────────
+    function addScore(catId, itemIdx, char) {
+        const s = sessions.find(x => x.id === currentSessionId);
+        const cat = (s.categories || []).find(c => c.id === catId);
+        const item = cat.subItems[itemIdx];
         item.scores = (item.scores || '') + char;
         checkCompletion(item);
-        renderMiniTable();
+        renderObjectives(cat);
+        renderSidebar();
+        const el = document.getElementById('sitem-' + currentSessionId);
+        if (el) el.classList.add('active');
     }
 
-    function removeLastPoint(index) {
-        const item = tableData[currentEditingRowIndex].subItems[index];
+    function removeScore(catId, itemIdx) {
+        const s = sessions.find(x => x.id === currentSessionId);
+        const cat = (s.categories || []).find(c => c.id === catId);
+        const item = cat.subItems[itemIdx];
         if (item.scores && item.scores.length > 0) {
             item.scores = item.scores.slice(0, -1);
             checkCompletion(item);
-            renderMiniTable();
+            renderObjectives(cat);
         }
     }
 
     function checkCompletion(item) {
-        const scores = item.scores || "";
-        item.completed = scores.includes("+++");
+        item.completed = (item.scores || '').includes('+++');
     }
 
+    // ── SALVARE ───────────────────────────────────────────────────
     async function saveData() {
+        // Sincronizăm câmpurile editabile active
+        updateSessionMeta();
+
         let result;
         if (fisaRecordId) {
             result = await _supabase.from('fisa_data')
-                .update({ data: tableData, updated_at: new Date().toISOString() })
+                .update({ data: sessions, updated_at: new Date().toISOString() })
                 .eq('id', fisaRecordId);
         } else {
             result = await _supabase.from('fisa_data')
-                .insert([{ patient_id: patientId, data: tableData }])
-                .select()
-                .single();
+                .insert([{ patient_id: patientId, data: sessions }])
+                .select().single();
             if (result.data) fisaRecordId = result.data.id;
         }
 
         if (result.error) {
             showToast("Eroare la salvare: " + result.error.message, "❌");
         } else {
-            const indicator = document.getElementById('saveIndicator');
-            indicator.style.display = 'inline';
-            setTimeout(() => indicator.style.display = 'none', 2000);
-            showToast("Fișa a fost salvată!");
+            const ind = document.getElementById('saveIndicator');
+            ind.style.display = 'inline';
+            setTimeout(() => ind.style.display = 'none', 2500);
+            showToast("Ședința a fost salvată! ✓");
         }
     }
 
-    window.onclick = function(e) { if (e.target == document.getElementById("catModal")) closeModal(); }
-
-    function showToast(message, icon = "✅") {
-        let toast = document.getElementById('customToast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'customToast';
-            toast.style.position = 'fixed';
-            toast.style.bottom = '20px';
-            toast.style.right = '20px';
-            toast.style.background = 'white';
-            toast.style.padding = '15px 25px';
-            toast.style.borderRadius = '15px';
-            toast.style.boxShadow = '0 5px 15px rgba(0,0,0,0.1)';
-            toast.style.zIndex = '3000';
-            document.body.appendChild(toast);
-        }
-        toast.innerHTML = `${icon} ${message}`;
-        toast.style.display = 'block';
-        setTimeout(() => toast.style.display = 'none', 3000);
+    // ── TOAST ─────────────────────────────────────────────────────
+    function showToast(msg, icon = "✅") {
+        const t = document.getElementById('customToast');
+        t.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3000);
     }
 
     init();

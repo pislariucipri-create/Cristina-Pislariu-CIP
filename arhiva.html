@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arhivă | Cristina Pîslariu</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Quicksand:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .archive-container { padding: 4rem 10%; max-width: 1200px; margin: 0 auto; }
+        .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2.5rem; flex-wrap: wrap; gap: 1rem; }
+        .page-header h1 { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; color: var(--text-maro-inchis); margin: 0; }
+        .page-header p { color: #999; margin: 0.2rem 0 0; font-size: 0.9rem; }
+
+        .search-bar { position: relative; margin-bottom: 2rem; }
+        .search-bar input { width: 100%; padding: 14px 20px 14px 48px; border: 1px solid #e8e0d8; border-radius: 15px; font-family: 'Quicksand', sans-serif; font-size: 0.95rem; background: white; outline: none; transition: 0.3s; }
+        .search-bar input:focus { border-color: var(--verde-sage); box-shadow: 0 0 0 3px rgba(129,164,115,0.12); }
+        .search-bar .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 1.1rem; opacity: 0.5; }
+
+        .archive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+
+        .archive-card {
+            background: white;
+            border-radius: 18px;
+            border-left: 5px solid #c79e7f;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.04);
+            overflow: hidden;
+            transition: 0.3s;
+            position: relative;
+        }
+        .archive-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
+
+        .card-top { padding: 1.2rem 1.5rem 0; display: flex; align-items: center; gap: 14px; }
+        .archive-avatar {
+            width: 56px; height: 56px; border-radius: 50%;
+            background: #f0ede8; border: 2px solid #c79e7f;
+            overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+        }
+        .archive-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .card-name { font-weight: 700; font-size: 1.1rem; color: var(--text-maro-inchis); margin: 0; }
+        .card-meta { font-size: 0.82rem; color: #999; margin: 3px 0 0; }
+
+        .archive-badge { 
+            position: absolute; top: 12px; right: 12px;
+            background: #fff3e0; color: #e65100; font-size: 0.7rem; font-weight: 700;
+            padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;
+        }
+
+        .card-body { padding: 1rem 1.5rem; }
+        .info-chip { display: inline-flex; align-items: center; gap: 5px; background: #f8f5f0; padding: 4px 10px; border-radius: 8px; font-size: 0.78rem; margin: 3px 2px; color: #6d4a37; }
+
+        .data-summary { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .has-badge { background: #e8f5e9; color: #2e7d32; padding: 3px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; }
+        .no-badge { background: #f5f5f5; color: #bbb; padding: 3px 10px; border-radius: 8px; font-size: 0.75rem; }
+
+        .card-footer { 
+            padding: 0.8rem 1.5rem; 
+            border-top: 1px solid #f5f0ea; 
+            display: flex; gap: 8px; 
+            background: #fdfaf3;
+        }
+        .btn-view { 
+            flex: 1; padding: 8px; border-radius: 10px; border: 1px solid #c79e7f; 
+            background: white; color: #c79e7f; font-weight: 700; font-size: 0.8rem; 
+            cursor: pointer; transition: 0.2s; 
+        }
+        .btn-view:hover { background: #c79e7f; color: white; }
+        .btn-restore { 
+            flex: 1; padding: 8px; border-radius: 10px; border: 1px solid var(--verde-sage); 
+            background: white; color: var(--verde-sage); font-weight: 700; font-size: 0.8rem; 
+            cursor: pointer; transition: 0.2s; 
+        }
+        .btn-restore:hover { background: var(--verde-sage); color: white; }
+        .btn-del-perm { 
+            padding: 8px 12px; border-radius: 10px; border: 1px solid #ffcdd2; 
+            background: white; color: #e57373; font-weight: 700; font-size: 0.8rem; 
+            cursor: pointer; transition: 0.2s; 
+        }
+        .btn-del-perm:hover { background: #ffebee; }
+
+        .empty-state { text-align: center; padding: 5rem 2rem; color: #bbb; grid-column: 1/-1; }
+        .empty-state .empty-icon { font-size: 4rem; margin-bottom: 1rem; display: block; }
+        .empty-state h3 { font-size: 1.3rem; margin-bottom: 0.5rem; color: #ccc; }
+
+        .loading-state { text-align: center; padding: 3rem; color: #bbb; grid-column: 1/-1; }
+
+        /* MODAL DETALII */
+        .detail-modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(78,54,41,0.6); backdrop-filter: blur(8px); }
+        .detail-modal-content { 
+            background: white; margin: 3vh auto; padding: 2.5rem; border-radius: 25px; 
+            width: 95%; max-width: 800px; max-height: 88vh; overflow-y: auto; position: relative; 
+        }
+        .detail-modal-content::-webkit-scrollbar { width: 6px; }
+        .detail-modal-content::-webkit-scrollbar-thumb { background: var(--verde-sage); border-radius: 10px; }
+
+        .close-detail { position: absolute; right: 20px; top: 15px; font-size: 1.8rem; cursor: pointer; color: #ccc; line-height: 1; }
+        .close-detail:hover { color: #999; }
+        .detail-section { margin-bottom: 1.5rem; }
+        .detail-section h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: var(--text-maro-inchis); margin-bottom: 0.5rem; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .detail-section pre { white-space: pre-wrap; font-family: 'Quicksand', sans-serif; font-size: 0.9rem; line-height: 1.7; color: #555; background: #fdfaf3; padding: 1rem; border-radius: 10px; }
+
+        .stats-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 2rem; }
+        .stat-card { background: white; border-radius: 15px; padding: 1.2rem; text-align: center; border: 1px solid #eee; box-shadow: 0 3px 10px rgba(0,0,0,0.03); }
+        .stat-card .num { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; color: var(--text-maro-inchis); font-weight: 700; }
+        .stat-card .lbl { font-size: 0.8rem; color: #999; margin-top: 3px; }
+
+        @media (max-width: 600px) { .archive-container { padding: 2rem 5%; } .stats-bar { grid-template-columns: 1fr 1fr; } }
+    </style>
+</head>
+<body>
+
+<header>
+    <nav class="main-nav">
+        <ul>
+            <li><a href="index.html">Acasă</a></li>
+            <li><a href="fisa-notare.html">Participanți activi</a></li>
+            <li><a href="arhiva.html" class="active">🗄️ Arhivă</a></li>
+            <li><a href="javascript:void(0)" onclick="logout()" style="color:#a47373;">Logout</a></li>
+        </ul>
+    </nav>
+</header>
+
+<main class="archive-container">
+    <div class="page-header">
+        <div>
+            <h1>🗄️ Arhivă Profiluri</h1>
+            <p>Profilurile șterse sunt păstrate complet în arhivă. Poți restaura sau vizualiza orice dosar.</p>
+        </div>
+    </div>
+
+    <div class="stats-bar" id="statsBar">
+        <div class="stat-card"><div class="num" id="statTotal">-</div><div class="lbl">Profiluri arhivate</div></div>
+        <div class="stat-card"><div class="num" id="statFise">-</div><div class="lbl">Cu fișe de notare</div></div>
+        <div class="stat-card"><div class="num" id="statRapoarte">-</div><div class="lbl">Cu rapoarte/planuri</div></div>
+    </div>
+
+    <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Caută după nume, email sau diagnostic..." oninput="filterArchive()">
+    </div>
+
+    <div class="archive-grid" id="archiveGrid">
+        <div class="loading-state">⏳ Se încarcă arhiva...</div>
+    </div>
+</main>
+
+<!-- MODAL DETALII COMPLETE -->
+<div id="detailModal" class="detail-modal">
+    <div class="detail-modal-content">
+        <span class="close-detail" onclick="closeDetail()">&times;</span>
+        <h2 id="detailName" style="font-family:'Cormorant Garamond',serif; font-size:2rem; color:var(--text-maro-inchis); margin-bottom:0.3rem;"></h2>
+        <p id="detailMeta" style="color:#c79e7f; font-weight:600; margin-bottom:1.5rem;"></p>
+
+        <div class="detail-section">
+            <h4>📋 Date personale</h4>
+            <pre id="detailPersonal"></pre>
+        </div>
+        <div class="detail-section" id="sectionFisa">
+            <h4>📊 Fișă de notare (obiective & scoruri)</h4>
+            <pre id="detailFisa"></pre>
+        </div>
+        <div class="detail-section" id="sectionRaport">
+            <h4>📝 Raport psiholog</h4>
+            <pre id="detailRaport"></pre>
+        </div>
+        <div class="detail-section" id="sectionPlan">
+            <h4>📑 Plan de intervenție (HTML salvat)</h4>
+            <div id="detailPlan" style="background:#fdfaf3; border-radius:10px; padding:1rem; font-size:0.85rem; color:#555; max-height:300px; overflow:auto;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://yexvpbgkrzerkizscgfn.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_q52fh6Xa3yNm3q0akTrKKw_7AlxLrCU';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const session = JSON.parse(sessionStorage.getItem('session') || 'null');
+    if (!session || session.role !== 'psiholog') { window.location.href = "index.html"; }
+
+    let allArchived = [];
+
+    // ============================================================
+    // ÎNCĂRCARE ARHIVĂ
+    // ============================================================
+    async function loadArchive() {
+        const grid = document.getElementById('archiveGrid');
+        const { data, error } = await _supabase
+            .from('archived_patients')
+            .select('*')
+            .order('archived_at', { ascending: false });
+
+        if (error) {
+            grid.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><h3>Eroare la încărcare</h3><p>${error.message}</p></div>`;
+            return;
+        }
+
+        allArchived = data || [];
+        updateStats(allArchived);
+        renderArchive(allArchived);
+    }
+
+    function updateStats(data) {
+        document.getElementById('statTotal').innerText = data.length;
+        document.getElementById('statFise').innerText = data.filter(d => d.fisa_data && d.fisa_data.length > 0).length;
+        document.getElementById('statRapoarte').innerText = data.filter(d => d.report_content || d.plan_html).length;
+    }
+
+    function renderArchive(data) {
+        const grid = document.getElementById('archiveGrid');
+        if (!data || data.length === 0) {
+            grid.innerHTML = `
+                <div class="empty-state">
+                    <span class="empty-icon">📂</span>
+                    <h3>Arhiva este goală</h3>
+                    <p>Profilurile șterse din secțiunea Participanți vor apărea aici.</p>
+                </div>`;
+            return;
+        }
+
+        grid.innerHTML = '';
+        data.forEach(a => {
+            const date = new Date(a.archived_at).toLocaleDateString('ro-RO', { day:'2-digit', month:'long', year:'numeric' });
+            const photo = a.photo ? `<img src="${a.photo}" alt="${a.name}">` : '👤';
+            const hasFisa = a.fisa_data && JSON.stringify(a.fisa_data).length > 10;
+            const hasRaport = !!a.report_content;
+            const hasPlan = !!a.plan_html;
+
+            const card = document.createElement('div');
+            card.className = 'archive-card';
+            card.dataset.name = (a.name || '').toLowerCase();
+            card.dataset.email = (a.email || '').toLowerCase();
+            card.dataset.diag = (a.diagnosis || '').toLowerCase();
+
+            card.innerHTML = `
+                <div class="archive-badge">ARHIVAT ${date}</div>
+                <div class="card-top">
+                    <div class="archive-avatar">${a.photo ? `<img src="${a.photo}" alt="${a.name}">` : '👤'}</div>
+                    <div>
+                        <p class="card-name">${a.name || 'Fără nume'}</p>
+                        <p class="card-meta">${a.age ? a.age + ' ani' : ''} · ${a.email || ''}</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div>
+                        ${a.pass ? `<span class="info-chip">🔑 ${a.pass}</span>` : ''}
+                        <span class="info-chip">📧 ${a.email || '—'}</span>
+                    </div>
+                    <div class="data-summary">
+                        <span class="${hasFisa ? 'has-badge' : 'no-badge'}">📊 Fișă ${hasFisa ? '✓' : '—'}</span>
+                        <span class="${hasRaport ? 'has-badge' : 'no-badge'}">📝 Raport ${hasRaport ? '✓' : '—'}</span>
+                        <span class="${hasPlan ? 'has-badge' : 'no-badge'}">📑 Plan ${hasPlan ? '✓' : '—'}</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-view" onclick="showDetail('${a.id}')">👁️ Vezi tot</button>
+                    <button class="btn-restore" onclick="restorePatient('${a.id}')">♻️ Restaurează</button>
+                    <button class="btn-del-perm" onclick="deletePermanent('${a.id}')" title="Șterge definitiv">🗑️</button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    // ============================================================
+    // FILTRARE CĂUTARE
+    // ============================================================
+    function filterArchive() {
+        const q = document.getElementById('searchInput').value.toLowerCase();
+        if (!q) { renderArchive(allArchived); return; }
+        const filtered = allArchived.filter(a =>
+            (a.name || '').toLowerCase().includes(q) ||
+            (a.email || '').toLowerCase().includes(q) ||
+            (a.diagnosis || '').toLowerCase().includes(q)
+        );
+        renderArchive(filtered);
+    }
+
+    // ============================================================
+    // VIZUALIZARE DETALII COMPLETE
+    // ============================================================
+    function showDetail(id) {
+        const a = allArchived.find(x => x.id === id);
+        if (!a) return;
+
+        document.getElementById('detailName').innerText = a.name || 'Fără nume';
+        document.getElementById('detailMeta').innerText = 
+            `Arhivat la: ${new Date(a.archived_at).toLocaleDateString('ro-RO')} · Vârstă: ${a.age || '—'} ani`;
+
+        document.getElementById('detailPersonal').innerText = 
+            `Nume: ${a.name || '—'}
+Vârstă: ${a.age || '—'} ani
+Email: ${a.email || '—'}
+Parolă cont părinte: ${a.pass || '—'}
+Foto: ${a.photo ? '(salvată)' : '(fără fotografie)'}`;
+
+        // Fișă de notare
+        const fisaSection = document.getElementById('sectionFisa');
+        if (a.fisa_data && a.fisa_data.length > 0) {
+            let fisaText = '';
+            a.fisa_data.forEach((cat, i) => {
+                fisaText += `\n[${i+1}] ${cat.catName || 'Categorie'}\n`;
+                if (cat.obs) fisaText += `    Observații: ${cat.obs}\n`;
+                if (cat.subItems && cat.subItems.length > 0) {
+                    cat.subItems.forEach(item => {
+                        fisaText += `    • ${item.name || ''}`;
+                        if (item.scores) fisaText += ` → Scoruri: ${item.scores}`;
+                        if (item.completed) fisaText += ' ✅ SUCCES';
+                        if (item.locatie) fisaText += ` | Locație: ${item.locatie}`;
+                        if (item.persoana) fisaText += ` | Persoană: ${item.persoana}`;
+                        if (item.detalii_extra) fisaText += ` | Detalii: ${item.detalii_extra}`;
+                        fisaText += '\n';
+                    });
+                }
+            });
+            document.getElementById('detailFisa').innerText = fisaText || '(fișă goală)';
+            fisaSection.style.display = 'block';
+        } else {
+            fisaSection.style.display = 'none';
+        }
+
+        // Raport
+        const raportSection = document.getElementById('sectionRaport');
+        if (a.report_content) {
+            document.getElementById('detailRaport').innerText = a.report_content;
+            raportSection.style.display = 'block';
+        } else {
+            raportSection.style.display = 'none';
+        }
+
+        // Plan intervenție
+        const planSection = document.getElementById('sectionPlan');
+        if (a.plan_html) {
+            document.getElementById('detailPlan').innerHTML = a.plan_html;
+            planSection.style.display = 'block';
+        } else {
+            planSection.style.display = 'none';
+        }
+
+        document.getElementById('detailModal').style.display = 'block';
+    }
+
+    function closeDetail() {
+        document.getElementById('detailModal').style.display = 'none';
+    }
+
+    window.onclick = function(e) {
+        if (e.target === document.getElementById('detailModal')) closeDetail();
+    };
+
+    // ============================================================
+    // RESTAURARE PROFIL
+    // ============================================================
+    async function restorePatient(id) {
+        const a = allArchived.find(x => x.id === id);
+        if (!a) return;
+        if (!confirm(`Restaurezi profilul lui ${a.name}? Va fi mutat înapoi în lista activă.`)) return;
+
+        // Reinserăm în patients
+        const { error: pErr } = await _supabase
+            .from('patients')
+            .insert([{ name: a.name, age: a.age, email: a.email, pass: a.pass, photo: a.photo }]);
+
+        if (pErr) { showToast('Eroare la restaurare: ' + pErr.message, '❌'); return; }
+
+        // Obținem id-ul nou
+        const { data: newP } = await _supabase.from('patients').select('id').eq('email', a.email).single();
+        if (newP && a.fisa_data && a.fisa_data.length > 0) {
+            await _supabase.from('fisa_data').insert([{ patient_id: newP.id, data: a.fisa_data }]);
+        }
+        if (newP && a.report_content) {
+            await _supabase.from('reports').insert([{ patient_id: newP.id, content: a.report_content }]);
+        }
+        if (newP && a.plan_html) {
+            await _supabase.from('intervention_plans').insert([{ patient_id: newP.id, html_content: a.plan_html }]);
+        }
+
+        // Reinserăm user-ul parinte dacă nu există
+        await _supabase.from('users').upsert([{ email: a.email, password: a.pass, role: 'parinte' }], { onConflict: 'email', ignoreDuplicates: true });
+
+        // Ștergem din arhivă
+        await _supabase.from('archived_patients').delete().eq('id', id);
+
+        showToast(`${a.name} a fost restaurat cu succes! ♻️`);
+        loadArchive();
+    }
+
+    // ============================================================
+    // ȘTERGERE PERMANENTĂ
+    // ============================================================
+    async function deletePermanent(id) {
+        const a = allArchived.find(x => x.id === id);
+        if (!a) return;
+        if (!confirm(`⚠️ Atenție! Ștergi DEFINITIV profilul lui ${a.name}. Această acțiune este ireversibilă!\n\nContinui?`)) return;
+
+        const { error } = await _supabase.from('archived_patients').delete().eq('id', id);
+        if (error) { showToast('Eroare: ' + error.message, '❌'); return; }
+        showToast(`Profil șters definitiv din arhivă.`, '🗑️');
+        loadArchive();
+    }
+
+    function logout() { sessionStorage.removeItem('session'); window.location.href = 'index.html'; }
+
+    function showToast(message, icon = '✅') {
+        let toast = document.getElementById('customToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'customToast';
+            toast.className = 'custom-notification';
+            document.body.appendChild(toast);
+        }
+        toast.innerHTML = `<span class="notification-icon">${icon}</span> ${message}`;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+
+    loadArchive();
+</script>
+</body>
+</html>
