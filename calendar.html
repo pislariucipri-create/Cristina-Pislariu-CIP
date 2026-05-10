@@ -22,9 +22,11 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: var(--font-sans); background-color: var(--crem-fundal); color: var(--text-maro-deschis); }
 
-        header { background-color: var(--alb-curat); padding: 1rem 10%; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; }
-        .main-nav ul { display: flex; justify-content: space-around; list-style: none; }
-        .main-nav a { text-decoration: none; color: var(--text-maro-inchis); font-weight: 600; }
+        header { background-color: var(--alb-curat); padding: 0.9rem 5%; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; }
+        .nav-wrapper { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+        .main-nav ul { display: flex; align-items: center; list-style: none; gap: 0.2rem; }
+        .main-nav a { text-decoration: none; color: var(--text-maro-inchis); font-weight: 600; padding: 0.5rem 0.9rem; border-radius: 20px; transition: 0.3s; font-size: 0.95rem; }
+        .main-nav a:hover { color: var(--verde-sage); background-color: rgba(129,164,115,0.12); }
 
         .calendar-app { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
         .calendar-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: var(--alb-curat); padding: 20px 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
@@ -71,13 +73,17 @@
 <body>
 
     <header>
-        <nav class="main-nav">
-            <ul>
-                <li><a href="index.html">Acasă</a></li>
-                <li><a href="fisa-individuala.html">Participanţi</a></li>
-                <li><a href="javascript:void(0)" onclick="location.reload()" style="color: #a47373;">Reset</a></li>
-            </ul>
-        </nav>
+        <div class="nav-wrapper">
+            <a href="index.html" class="nav-logo" style="font-family: var(--font-serif); font-size: 1.2rem; font-weight: 700; color: var(--text-maro-inchis); text-decoration: none;">Cristina <span style="color: var(--verde-sage);">Pîslariu</span></a>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="index.html">Acasă</a></li>
+                    <li><a href="fisa-notare.html">Participanți</a></li>
+                    <li><a href="calendar.html" style="color: var(--verde-sage);">📅 Calendar</a></li>
+                    <li><a href="javascript:void(0)" onclick="location.reload()" style="color: #a47373;">Reset</a></li>
+                </ul>
+            </nav>
+        </div>
     </header>
 
     <main class="calendar-app">

@@ -5,22 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fișă Individuală | Cristina Pîslariu</title>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --text-maro-inchis: #4e3629;
-            --text-maro-deschis: #6d4a37;
-            --verde-sage: #81a473;
-            --verde-sage-inchis: #6a8c5f;
-            --crem-fundal: #fdfaf3;
-            --alb-curat: #ffffff;
-            --maro-lemn: #c79e7f;
-            --font-serif: 'Cormorant Garamond', serif;
-            --font-sans: 'Quicksand', sans-serif;
             --succes-bg: #d3f9d8;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: var(--font-sans); background-color: var(--crem-fundal); color: var(--text-maro-deschis); }
 
         /* ── HEADER ── */
         header { background: var(--alb-curat); padding: 0.9rem 5%; box-shadow: 0 2px 10px rgba(0,0,0,0.06); position: sticky; top: 0; z-index: 500; }
@@ -180,13 +170,28 @@
         .btn-add-obj:hover { background: #fdf5ed; }
 
         /* ── TOAST ── */
-        .custom-notification {
-            position: fixed; bottom: 25px; right: 25px; background: var(--text-maro-inchis);
-            color: white; padding: 14px 22px; border-radius: 15px; font-weight: 600;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15); z-index: 9999; display: none;
-            font-family: var(--font-sans); font-size: 0.9rem; max-width: 320px;
+        #customToast {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background: var(--text-maro-inchis);
+            color: white;
+            padding: 14px 22px;
+            border-radius: 15px;
+            font-weight: 600;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            z-index: 9999;
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+            max-width: 320px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateX(calc(100% + 40px));
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-left: 4px solid var(--verde-sage);
         }
-        .custom-notification.show { display: flex; align-items: center; gap: 10px; }
+        #customToast.show { transform: translateX(0); }
 
         /* ── RESPONSIVE ── */
         @media (max-width: 768px) {
@@ -229,7 +234,7 @@
 
 </div>
 
-<div id="customToast" class="custom-notification"></div>
+<div id="customToast"></div>
 
 <script>
     const SUPABASE_URL = 'https://yexvpbgkrzerkizscgfn.supabase.co';

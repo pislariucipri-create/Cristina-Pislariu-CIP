@@ -6,6 +6,7 @@
     <title>Plan de Intervenție | Cristina Pîslariu</title>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Dancing+Script:wght@500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Quicksand', sans-serif; background: #e0dbd5; }
@@ -278,7 +279,7 @@
             '<span class="nav-title" id="ntitle">Plan de intervenție</span>';
         document.getElementById('navRight').innerHTML =
             '<button class="btn-nav save" onclick="savePlan()">💾 Salvează</button>' +
-            '<button class="btn-nav pdf"  onclick="window.print()">🖨️ PDF</button>';
+            '<button class="btn-nav pdf" id="btnPdfPsi" onclick="exportPDF()">🖨️ PDF</button>';
 
         const [{ data: patient }, { data: plan }] = await Promise.all([
             _supabase.from('patients').select('*').eq('id', pid).single(),
@@ -464,7 +465,7 @@
             '<a class="btn-nav" href="index.html">🏠 Acasă</a>' +
             '<span class="nav-title">📋 Planul meu de intervenție</span>';
         document.getElementById('navRight').innerHTML =
-            '<button class="btn-nav pdf" onclick="window.print()">🖨️ PDF</button>';
+            '<button class="btn-nav pdf" id="btnPdfP" onclick="exportPDF()">🖨️ PDF</button>';
 
         const { data: patient } = await _supabase.from('patients').select('*').eq('email', session.email).maybeSingle();
         if (!patient) {
@@ -519,6 +520,32 @@
         t.classList.add('show');
         clearTimeout(t._t);
         t._t = setTimeout(()=>t.classList.remove('show'), 3500);
+    }
+
+    /* ── EXPORT PDF COMPLET (tot documentul, nu doar ecranul) ── */
+    async function exportPDF() {
+        const el = document.querySelector('.paper') || document.querySelector('.p-planbox');
+        if (!el) { toast('Nu există conținut de exportat.', '⚠️'); return; }
+
+        const btn = document.getElementById('btnPdfPsi') || document.getElementById('btnPdfP');
+        if (btn) { btn.textContent = '⏳...'; btn.disabled = true; }
+
+        const opt = {
+            margin: [12, 15, 12, 15],
+            filename: 'Plan_Interventie.pdf',
+            image: { type: 'jpeg', quality: 0.97 },
+            html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        try {
+            await html2pdf().set(opt).from(el).save();
+        } catch(e) {
+            toast('Eroare la export: ' + e.message, '❌');
+        }
+
+        if (btn) { btn.textContent = '🖨️ PDF'; btn.disabled = false; }
     }
 </script>
 </body>

@@ -112,14 +112,17 @@
 <body>
 
 <header>
-    <nav class="main-nav">
-        <ul>
-            <li><a href="index.html">Acasă</a></li>
-            <li><a href="fisa-notare.html">Participanți activi</a></li>
-            <li><a href="arhiva.html" class="active">🗄️ Arhivă</a></li>
-            <li><a href="javascript:void(0)" onclick="logout()" style="color:#a47373;">Logout</a></li>
-        </ul>
-    </nav>
+    <div class="nav-wrapper">
+        <a href="index.html" class="nav-logo">Cristina <span>Pîslariu</span></a>
+        <nav class="main-nav">
+            <ul>
+                <li><a href="index.html">Acasă</a></li>
+                <li><a href="fisa-notare.html">Participanți activi</a></li>
+                <li><a href="arhiva.html" class="active">🗄️ Arhivă</a></li>
+                <li><a href="javascript:void(0)" onclick="logout()" style="color:#a47373;">Logout</a></li>
+            </ul>
+        </nav>
+    </div>
 </header>
 
 <main class="archive-container">
@@ -415,6 +418,10 @@ Foto: ${a.photo ? '(salvată)' : '(fără fotografie)'}`;
         toast.classList.add('show');
         setTimeout(() => toast.classList.remove('show'), 3500);
     }
+
+    // Verificare sesiune - doar psiholog
+    const _session = JSON.parse(sessionStorage.getItem('session') || 'null');
+    if (!_session || _session.role !== 'psiholog') { window.location.href = 'index.html'; }
 
     loadArchive();
 </script>

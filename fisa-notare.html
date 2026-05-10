@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Quicksand:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         .admin-container { padding: 4rem 10%; }
         .form-card { 
@@ -39,6 +40,112 @@
         .btn-delete-profile:hover { color: #d32f2f; }
         .btn-tool { cursor: pointer; padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd; background: white; font-size: 0.8rem; font-weight: 600; }
         .loading-overlay { text-align: center; padding: 3rem; color: #999; }
+
+        /* ── PLAN COMPORTAMENT MODAL ── */
+        #behaviorModal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 99999;
+            flex-direction: column;
+            background: rgba(30,20,15,0.72);
+        }
+        #behaviorModal.open { display: flex; }
+
+        .bm-navbar {
+            background: #3e2723; height: 48px; display: flex; align-items: center;
+            justify-content: space-between; padding: 0 14px; gap: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.35); flex-shrink: 0;
+        }
+        .bm-navbar-left { display: flex; align-items: center; gap: 6px; }
+        .bm-navbar-right { display: flex; align-items: center; gap: 6px; }
+        .bm-btn {
+            background: rgba(255,255,255,0.13); color: white; border: none;
+            padding: 5px 13px; border-radius: 5px; cursor: pointer;
+            font-family: 'Quicksand', 'Cormorant Garamond', sans-serif;
+            font-weight: 700; font-size: 0.8rem; display: inline-flex;
+            align-items: center; gap: 4px; transition: 0.15s;
+        }
+        .bm-btn:hover { background: rgba(255,255,255,0.26); }
+        .bm-btn.save { background: #2e7d32; }
+        .bm-btn.save:hover { background: #1b5e20; }
+        .bm-btn.pdf  { background: #5d4037; }
+        .bm-btn.pdf:hover  { background: #4e342e; }
+        .bm-title { color: rgba(255,255,255,0.75); font-size: 0.85rem; font-weight: 700; margin-left: 6px; }
+
+        .bm-fmtbar {
+            background: #faf7f3; border-bottom: 1px solid #ddd5c8;
+            padding: 5px 10px; display: flex; align-items: center; flex-wrap: wrap;
+            gap: 2px; flex-shrink: 0;
+        }
+        .bm-sep { width: 1px; height: 22px; background: #ccc; margin: 0 4px; flex-shrink: 0; }
+        .bm-fb {
+            background: none; border: 1px solid transparent; border-radius: 3px;
+            padding: 3px 7px; cursor: pointer; font-size: 0.8rem; color: #3e2723;
+            font-family: inherit; transition: 0.12s;
+            display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;
+        }
+        .bm-fb:hover { background: #ede8e2; border-color: #c9bbae; }
+        .bm-fsel {
+            border: 1px solid #ccc; border-radius: 3px; padding: 3px 5px;
+            font-size: 0.8rem; background: white; color: #3e2723; cursor: pointer;
+        }
+        .bm-clr { position: relative; width: 26px; height: 26px; border-radius: 4px; overflow: hidden; border: 1px solid #ccc; }
+        .bm-clr input[type=color] { position: absolute; top: -4px; left: -4px; width: 38px; height: 38px; border: none; padding: 0; cursor: pointer; background: none; }
+        .bm-lbl { font-size: 0.7rem; color: #999; padding: 0 2px; }
+
+        /* ZONA DE SCROLL — ocupa tot spatiul ramas */
+        .bm-doczone {
+            flex: 1;
+            overflow-y: scroll;
+            overflow-x: auto;
+            background: #e0dbd5;
+            padding: 32px 20px 80px;
+            display: block;       /* NU flex — ca foaia sa nu fie fortata la inaltimea zonei */
+        }
+
+        /* FOAIA — se centreaza si creste liber cu continutul */
+        .bm-paper {
+            background: white;
+            width: 100%;
+            max-width: 794px;
+            min-height: 1123px;  /* o pagina A4 ca minim */
+            padding: 60px 72px 80px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+            margin: 0 auto;      /* centrare */
+            color: #000;
+            font-family: 'Times New Roman', Georgia, serif;
+            font-size: 13pt;
+            line-height: 1.8;
+            outline: none;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .bm-paper:focus-within { box-shadow: 0 4px 32px rgba(0,0,0,0.18), 0 0 0 3px rgba(129,164,115,0.4); }
+        .bm-paper h1 { font-size: 18pt; text-align: center; text-transform: uppercase; margin: 18px 0 12px; font-family: 'Times New Roman', serif; letter-spacing: 0.03em; }
+        .bm-paper h2 { font-size: 14pt; margin: 22px 0 10px; border-bottom: 2px solid #81a473; padding-bottom: 5px; color: #3e2723; font-family: 'Times New Roman', serif; }
+        .bm-paper h3 { font-size: 12pt; margin: 14px 0 6px; color: #4e3629; font-style: italic; }
+        .bm-paper p  { margin: 7px 0; }
+        .bm-paper table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 11pt; table-layout: fixed; }
+        .bm-paper table td, .bm-paper table th { border: 1px solid #888; padding: 9px 11px; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
+        .bm-paper table th { background: #f0ebe5; font-weight: bold; text-align: center; font-size: 10pt; }
+        .bm-paper ul, .bm-paper ol { margin: 8px 0 8px 26px; }
+        .bm-paper li { margin: 5px 0; }
+        .bm-paper blockquote { border-left: 3px solid #81a473; margin: 12px 0; padding: 6px 16px; color: #555; font-style: italic; }
+        .bm-paper hr { border: none; border-top: 1px solid #bbb; margin: 18px 0; }
+        .bm-paper a { color: #2e7d32; }
+        @media print {
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            #behaviorModal .bm-navbar, #behaviorModal .bm-fmtbar { display: none !important; }
+            #behaviorModal { background: white !important; backdrop-filter: none !important; }
+            #behaviorModal .bm-doczone { padding: 0; background: white; }
+            #behaviorModal .bm-paper { box-shadow: none; width: 100%; max-width: 100%; padding: 20mm; min-height: 0; }
+            @page { margin: 0; size: A4; }
+        }
+        @media (max-width: 900px) {
+            .bm-paper { padding: 30px 20px 40px; }
+        }
     </style>
 </head>
 <body>
@@ -138,11 +245,15 @@
                     </div>
                     <div class="info-row"><strong>Email:</strong> ${p.email}</div>
                     <div class="info-row"><strong>Parolă:</strong> <span class="pass-display">${p.pass}</span></div>
-                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
                         <button class="btn-tool" onclick="window.location.href='fisa-individuala.html?id=${p.id}'">Fișă de notare</button>
                         <button class="btn-tool" style="border-color: #795548; color: #795548;" 
                                 onclick="window.location.href='documente-parinte.html?edit=true&id=${p.id}'">
                             Scrie Raport
+                        </button>
+                        <button class="btn-tool" style="border-color: #5c6bc0; color: #5c6bc0; background: #f3f4fc;"
+                                onclick="openBehaviorPlan('${p.id}', '${p.name.replace(/'/g, "\\'")}')">
+                             Plan Comportament
                         </button>
                     </div>
                 </div>
@@ -291,5 +402,485 @@ async function addPatient() {
 
     loadPatients();
 </script>
+<!-- ═══════════════════════════════════════════════════════
+     MODAL PLAN COMPORTAMENT (editor LFL fullscreen)
+════════════════════════════════════════════════════════ -->
+<div id="behaviorModal">
+
+    <!-- Nav bar -->
+    <div class="bm-navbar">
+        <div class="bm-navbar-left">
+            <button class="bm-btn" onclick="closeBehaviorModal()">✕ Închide</button>
+            <span class="bm-title" id="bmTitle">Plan de Intervenție Comportamentală</span>
+        </div>
+        <div class="bm-navbar-right">
+            <button class="bm-btn save" onclick="saveBehaviorPlan()">💾 Salvează</button>
+            <button class="bm-btn pdf"  onclick="exportBehaviorPDF()">🖨️ PDF</button>
+        </div>
+    </div>
+
+    <!-- Format bar -->
+    <div class="bm-fmtbar">
+        <button class="bm-fb" onclick="bmEx('undo')" title="Ctrl+Z">↩</button>
+        <button class="bm-fb" onclick="bmEx('redo')" title="Ctrl+Y">↪</button>
+        <div class="bm-sep"></div>
+        <select class="bm-fsel" onchange="bmBlk(this.value);this.value=''">
+            <option value="">Stil…</option>
+            <option value="p">Normal</option>
+            <option value="h1">Titlu 1</option>
+            <option value="h2">Titlu 2</option>
+            <option value="h3">Titlu 3</option>
+            <option value="blockquote">Citat</option>
+        </select>
+        <select class="bm-fsel" style="width:55px;" onchange="bmEx('fontSize',this.value);this.value=''">
+            <option value="">Pt…</option>
+            <option value="1">8</option>
+            <option value="2">10</option>
+            <option value="3">12</option>
+            <option value="4">14</option>
+            <option value="5">18</option>
+            <option value="6">24</option>
+        </select>
+        <select class="bm-fsel" onchange="bmEx('fontName',this.value);this.value=''">
+            <option value="">Font…</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Arial">Arial</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Dancing Script">Dancing Script</option>
+            <option value="Quicksand">Quicksand</option>
+        </select>
+        <div class="bm-sep"></div>
+        <button class="bm-fb" onclick="bmEx('bold')"><b>B</b></button>
+        <button class="bm-fb" onclick="bmEx('italic')"><i>I</i></button>
+        <button class="bm-fb" onclick="bmEx('underline')"><u>U</u></button>
+        <button class="bm-fb" onclick="bmEx('strikeThrough')"><s>S</s></button>
+        <div class="bm-sep"></div>
+        <span class="bm-lbl">Text</span>
+        <div class="bm-clr"><input type="color" value="#000000" oninput="bmEx('foreColor',this.value)"></div>
+        <span class="bm-lbl">Fond</span>
+        <div class="bm-clr"><input type="color" value="#ffffff" oninput="bmEx('hiliteColor',this.value)"></div>
+        <div class="bm-sep"></div>
+        <button class="bm-fb" onclick="bmEx('justifyLeft')">⬅</button>
+        <button class="bm-fb" onclick="bmEx('justifyCenter')">↔</button>
+        <button class="bm-fb" onclick="bmEx('justifyRight')">➡</button>
+        <button class="bm-fb" onclick="bmEx('justifyFull')">≡</button>
+        <div class="bm-sep"></div>
+        <button class="bm-fb" onclick="bmEx('insertUnorderedList')">• Listă</button>
+        <button class="bm-fb" onclick="bmEx('insertOrderedList')">1. Listă</button>
+        <button class="bm-fb" onclick="bmEx('indent')">→|</button>
+        <button class="bm-fb" onclick="bmEx('outdent')">|←</button>
+        <div class="bm-sep"></div>
+        <button class="bm-fb" onclick="bmInsertTable()">＋ Tabel</button>
+        <button class="bm-fb" onclick="bmAddRow()">＋ Rând</button>
+        <button class="bm-fb" onclick="bmAddCol()">＋ Col</button>
+        <button class="bm-fb" onclick="bmDelRow()" style="color:#c0392b;">− Rând</button>
+        <button class="bm-fb" onclick="bmDelCol()" style="color:#c0392b;">− Col</button>
+        <div class="bm-sep"></div>
+        <button class="bm-fb" onclick="bmEx('insertHTML','<hr><p><br></p>')">── Linie</button>
+        <button class="bm-fb" onclick="bmEx('removeFormat')" style="color:#795548;">✕ Format</button>
+    </div>
+
+    <!-- Document -->
+    <div class="bm-doczone">
+        <div class="bm-paper" id="bmPaper" contenteditable="true" spellcheck="true"></div>
+    </div>
+</div>
+
+<script>
+    // ═══════════════════════════════════════════════
+    // PLAN COMPORTAMENT — variabile globale
+    // ═══════════════════════════════════════════════
+    let bmPatientId = null;
+    let bmPatientName = '';
+    let bmPlanId = null;   // id-ul rândului din tabel behavior_plans
+
+    // ───────────────────────────────────────────────
+    // Deschide modalul pentru un pacient
+    // ───────────────────────────────────────────────
+    async function openBehaviorPlan(patientId, patientName) {
+        bmPatientId = patientId;
+        bmPatientName = patientName;
+        bmPlanId = null;
+
+        document.getElementById('bmTitle').textContent = 'Plan Comportament — ' + patientName;
+        document.getElementById('behaviorModal').classList.add('open');
+
+        const paper = document.getElementById('bmPaper');
+        paper.innerHTML = '<p style="text-align:center;color:#999;">Se încarcă...</p>';
+
+        // Caută plan existent
+        const { data: existing } = await _supabase
+            .from('behavior_plans')
+            .select('*')
+            .eq('patient_id', patientId)
+            .maybeSingle();
+
+        if (existing && existing.html_content) {
+            bmPlanId = existing.id;
+            paper.innerHTML = existing.html_content;
+        } else {
+            paper.innerHTML = buildBehaviorTemplate(patientName);
+        }
+
+        paper.focus();
+
+        // Ctrl+S → salvează
+        paper.onkeydown = e => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                saveBehaviorPlan();
+            }
+        };
+    }
+
+    function closeBehaviorModal() {
+        document.getElementById('behaviorModal').classList.remove('open');
+        document.getElementById('bmPaper').innerHTML = '';
+        bmPatientId = null; bmPlanId = null;
+    }
+
+    // ───────────────────────────────────────────────
+    // Template ABA tradus în română — versiune completă
+    // ───────────────────────────────────────────────
+    function buildBehaviorTemplate(name) {
+        const today = new Date().toLocaleDateString('ro-RO', {day:'2-digit', month:'long', year:'numeric'});
+        return `
+<p style="display:flex;justify-content:space-between;font-size:10.5pt;line-height:1.5;">
+    <span>
+        <strong>Cristina Pîslariu — Cabinet individual de psihologie</strong><br>
+        Str. Ion Creangă, nr. 1, Fălticeni, Suceava &nbsp;|&nbsp; CIF: 54275086
+    </span>
+    <span style="text-align:right;">
+        Tel: 0735 101 358<br>cipislariucristina@gmail.com
+    </span>
+</p>
+<hr>
+
+<h1>Plan de Intervenție Comportamentală</h1>
+<p style="text-align:center;font-size:11pt;margin-bottom:6px;">
+    <strong>Copil:</strong> ${name} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Data:</strong> ${today}
+</p>
+<p style="text-align:center;font-size:10pt;color:#666;">
+    <em>Psiholog: Cristina Pîslariu &nbsp;|&nbsp; Specialist ABA</em>
+</p>
+<br>
+
+<h2>I. DATE PERSONALE</h2>
+<table>
+<tr><th style="width:35%">Câmp</th><th>Date</th></tr>
+<tr><td><strong>Numele complet al copilului</strong></td><td>${name}</td></tr>
+<tr><td><strong>Data nașterii / Vârsta</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>CNP</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Diagnostic confirmat</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Tratament medicamentos în curs</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Persoana de contact (părinte/tutore)</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Telefon de contact</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Email</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Data startului intervenției</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Data prevăzută a revizuirii</strong></td><td>&nbsp;</td></tr>
+</table>
+<br>
+
+<h2>II. RAȚIUNEA PLANULUI</h2>
+<table>
+<tr><th style="width:35%">Aspect</th><th>Detalii</th></tr>
+<tr><td><strong>Descriere succintă a motivului planului</strong><br><em>De ce este necesar acest plan?</em></td><td>&nbsp;<br>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Istoric scurt al comportamentului</strong></td><td>&nbsp;<br>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Impactul asupra funcționării zilnice</strong></td><td>&nbsp;<br>&nbsp;</td></tr>
+</table>
+<br>
+
+<h2>III. DESCRIEREA COMPORTAMENTULUI ȚINTĂ</h2>
+<table>
+<tr><th style="width:35%">Aspect</th><th>Detalii</th></tr>
+<tr><td><strong>Descrierea topografică a comportamentului</strong><br><em>(Ce face exact copilul?)</em></td><td>&nbsp;<br>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Frecvența</strong><br><em>(De câte ori pe zi/săptămână?)</em></td><td>&nbsp;</td></tr>
+<tr><td><strong>Durata medie a unui episod</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Intensitatea</strong><br><em>(ușoară / moderată / severă)</em></td><td>&nbsp;</td></tr>
+<tr><td><strong>Contexte în care apare</strong><br><em>(când, unde, cu cine)</em></td><td>&nbsp;<br>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Contexte în care NU apare</strong></td><td>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Rezumatul evaluării funcționale (FBA)</strong><br><em>Data FBA: ……………</em></td><td>&nbsp;<br>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Funcția comportamentului</strong><br><em>(acces, evitare, atenție, senzorial)</em></td><td>&nbsp;</td></tr>
+<tr><td><strong>Antecedente tipice (triggeri)</strong></td><td>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Consecințele tipice</strong></td><td>&nbsp;<br>&nbsp;</td></tr>
+</table>
+<br>
+
+<h2>IV. STRATEGII DE INTERVENȚIE</h2>
+
+<h3>A. Strategii antecedente (modificarea mediului / prevenire)</h3>
+<table>
+<tr><th style="width:35%">Strategie</th><th>Descriere detaliată</th></tr>
+<tr><td><strong>Modificări imediate ale mediului</strong></td><td>&nbsp;<br>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Structura vizuală / program zilnic</strong></td><td>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Oferta de pauze structurate</strong></td><td>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Alegerea între activități</strong><br><em>(sentiment de control)</em></td><td>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Alte strategii antecedente</strong></td><td>&nbsp;<br>&nbsp;<br>&nbsp;</td></tr>
+</table>
+<br>
+
+<h3>B. Comportamentul de înlocuire și predare</h3>
+<table>
+<tr><th style="width:35%">Aspect</th><th>Descriere detaliată</th></tr>
+<tr><td><strong>Comportamentul de înlocuire ales</strong><br><em>(ce va face în loc?)</em></td><td>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Strategii de predare</strong><br><em>(modelare, ghidaj fizic, video-modeling etc.)</em></td><td>&nbsp;<br>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Comunicare funcțională</strong><br><em>(verbal, PECS, AAC, gesturi)</em></td><td>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Nivel de prompt inițial</strong></td><td>&nbsp;</td></tr>
+</table>
+<br>
+
+<h3>C. Strategii de întărire pozitivă</h3>
+<table>
+<tr><th style="width:35%">Aspect</th><th>Descriere detaliată</th></tr>
+<tr><td><strong>Întăritori identificați</strong><br><em>(preferințele copilului)</em></td><td>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Sistemul de recompensă</strong><br><em>(token economy, social, imediat)</em></td><td>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Programul de întărire</strong><br><em>(continuu / intermitent / rată fixă)</em></td><td>&nbsp;</td></tr>
+</table>
+<br>
+
+<h3>D. Strategii consecvente (reducerea comportamentului problematic)</h3>
+<table>
+<tr><th style="width:35%">Aspect</th><th>Descriere detaliată</th></tr>
+<tr><td><strong>Procedura la apariția comportamentului</strong></td><td>&nbsp;<br>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Eliminarea întăririi accidentale</strong><br><em>(extinction)</em></td><td>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Timp afară / pauză structurată</strong></td><td>&nbsp;</td></tr>
+</table>
+<br>
+
+<h2>V. PLAN DE SIGURANȚĂ</h2>
+<table>
+<tr><th style="width:35%">Aspect</th><th>Detalii</th></tr>
+<tr><td><strong>Riscuri identificate</strong></td><td>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Strategii de prevenție a riscurilor</strong></td><td>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Plan de intervenție în criză</strong></td><td>&nbsp;<br>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Contact de urgență #1</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Contact de urgență #2</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Nevoi de formare ale personalului</strong></td><td>&nbsp;<br>&nbsp;</td></tr>
+</table>
+<br>
+
+<h2>VI. PLAN DE IMPLEMENTARE</h2>
+<table>
+<tr><th style="width:35%">Aspect</th><th>Detalii</th></tr>
+<tr><td><strong>Data de debut a intervenției</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Durata planificată</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Frecvența sesiunilor</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Locul desfășurării</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Persoanele implicate în implementare</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Roluri și responsabilități</strong></td><td>&nbsp;<br>&nbsp;</td></tr>
+</table>
+<br>
+
+<h2>VII. MONITORIZAREA DATELOR</h2>
+<table>
+<tr><th style="width:35%">Aspect</th><th>Detalii</th></tr>
+<tr><td><strong>Tipul de date colectate</strong><br><em>(frecvență / durată / intensitate / interval)</em></td><td>&nbsp;</td></tr>
+<tr><td><strong>Instrumentele de colectare</strong><br><em>(fișe, aplicații, grafice)</em></td><td>&nbsp;</td></tr>
+<tr><td><strong>Cine colectează datele?</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Cât de des se colectează?</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Procesul de analiză și revizuire</strong><br><em>(cine, când, cum?)</em></td><td>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Obiectiv măsurabil al intervenției</strong><br><em>(ex: max. 1 episod/zi, 80% comportament înlocuitor)</em></td><td>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Criteriu de trecere la faza următoare</strong></td><td>&nbsp;</td></tr>
+</table>
+<br>
+
+<h2>VIII. GENERALIZARE</h2>
+<table>
+<tr><th style="width:35%">Aspect</th><th>Detalii</th></tr>
+<tr><td><strong>Medii țintă pentru generalizare</strong><br><em>(acasă, școală, comunitate)</em></td><td>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Persoane implicate (părinți, profesori, îngrijitori)</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Strategii de generalizare</strong></td><td>&nbsp;<br>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Creșterea treptată a complexității contextului</strong></td><td>&nbsp;<br>&nbsp;</td></tr>
+</table>
+<br>
+
+<h2>IX. MENȚINERE ȘI ESTOMPARE</h2>
+<table>
+<tr><th style="width:35%">Aspect</th><th>Detalii</th></tr>
+<tr><td><strong>Plan de estompare a prompt-urilor</strong></td><td>&nbsp;<br>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Reducerea frecvenței întăririi</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Transfer responsabilitate spre copil</strong></td><td>&nbsp;</td></tr>
+</table>
+<br>
+
+<h2>X. REVIZUIRE ȘI EVALUARE FINALĂ</h2>
+<table>
+<tr><th style="width:35%">Aspect</th><th>Detalii</th></tr>
+<tr><td><strong>Data revizuirii planificate</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Participanți la revizuire</strong></td><td>&nbsp;</td></tr>
+<tr><td><strong>Criterii de succes ale planului</strong></td><td>&nbsp;<br>&nbsp;</td></tr>
+<tr><td><strong>Pași următori după finalizare</strong></td><td>&nbsp;<br>&nbsp;</td></tr>
+</table>
+<br>
+<br>
+
+<h2>XI. SEMNĂTURI</h2>
+<table>
+<tr>
+    <td style="width:50%; text-align:center; padding:20px 10px;">
+        <p>Psiholog,</p>
+        <br><br><br>
+        <p><strong>Cristina Pîslariu</strong></p>
+        <p style="font-size:10pt;">Data: ……………………</p>
+    </td>
+    <td style="width:50%; text-align:center; padding:20px 10px;">
+        <p>Părinte / Tutore legal,</p>
+        <br><br><br>
+        <p><strong>……………………………………</strong></p>
+        <p style="font-size:10pt;">Data: ……………………</p>
+    </td>
+</tr>
+</table>
+<br>
+<hr>
+<p style="font-size:9.5pt;text-align:center;color:#888;margin-top:8px;">
+    <em>Cristina Pîslariu — Cabinet Individual de Psihologie &nbsp;|&nbsp; CIF: 54275086 &nbsp;|&nbsp; cipislariucristina@gmail.com &nbsp;|&nbsp; 0735 101 358</em><br>
+    <em>Str. Ion Creangă, nr. 1, Fălticeni, Suceava &nbsp;|&nbsp; Document confidențial conform GDPR</em>
+</p>`;
+    }
+
+    // ───────────────────────────────────────────────
+    // Salvare în Supabase (tabel behavior_plans)
+    // ───────────────────────────────────────────────
+    async function saveBehaviorPlan() {
+        const paper = document.getElementById('bmPaper');
+        const html = paper.innerHTML;
+        if (!bmPatientId) { showToast('Eroare: niciun pacient selectat.', '❌'); return; }
+
+        showToast('Se salvează...', '⏳');
+
+        try {
+            if (bmPlanId) {
+                // UPDATE
+                const { error } = await _supabase
+                    .from('behavior_plans')
+                    .update({ html_content: html, updated_at: new Date().toISOString() })
+                    .eq('id', bmPlanId);
+                if (error) throw error;
+            } else {
+                // INSERT
+                const { data, error } = await _supabase
+                    .from('behavior_plans')
+                    .insert([{ patient_id: bmPatientId, html_content: html }])
+                    .select('id')
+                    .single();
+                if (error) throw error;
+                if (data) bmPlanId = data.id;
+            }
+            showToast('Plan comportament salvat cu succes! ✅');
+        } catch (err) {
+            console.error('Eroare salvare behavior_plans:', err);
+            showToast('Eroare la salvare: ' + (err.message || JSON.stringify(err)), '❌');
+        }
+    }
+
+    // ───────────────────────────────────────────────
+    // Editor helper functions
+    // ───────────────────────────────────────────────
+    function bmEx(cmd, val) {
+        document.execCommand(cmd, false, val || null);
+        document.getElementById('bmPaper').focus();
+    }
+    function bmBlk(tag) {
+        if (!tag) return;
+        document.execCommand('formatBlock', false, tag);
+        document.getElementById('bmPaper').focus();
+    }
+    function bmNearestTag(tag) {
+        const sel = window.getSelection();
+        if (!sel || !sel.anchorNode) return null;
+        let node = sel.anchorNode;
+        const paper = document.getElementById('bmPaper');
+        while (node && node !== paper) { if (node.nodeName === tag) return node; node = node.parentNode; }
+        return null;
+    }
+    function bmFocusCell(el) {
+        if (!el) return;
+        el.focus();
+        const r = document.createRange(); r.selectNodeContents(el); r.collapse(false);
+        const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    }
+    function bmInsertTable() {
+        const cols = parseInt(prompt('Câte coloane?', '3') || '3');
+        const rows = parseInt(prompt('Câte rânduri (fără header)?', '3') || '3');
+        if (!cols || !rows) return;
+        let h = '<table><thead><tr>';
+        for (let c = 0; c < cols; c++) h += '<th>Coloana ' + (c + 1) + '</th>';
+        h += '</tr></thead><tbody>';
+        for (let r = 0; r < rows; r++) { h += '<tr>'; for (let c = 0; c < cols; c++) h += '<td>&nbsp;</td>'; h += '</tr>'; }
+        h += '</tbody></table><p><br></p>';
+        bmEx('insertHTML', h);
+    }
+    function bmAddRow() {
+        const cell = bmNearestTag('TD') || bmNearestTag('TH');
+        if (!cell) { showToast('Pune cursorul într-o celulă.', 'ℹ️'); return; }
+        const row = cell.closest('tr');
+        const cols = row.querySelectorAll('td,th').length;
+        const nr = document.createElement('tr');
+        for (let i = 0; i < cols; i++) { const td = document.createElement('td'); td.innerHTML = '&nbsp;'; nr.appendChild(td); }
+        row.after(nr); bmFocusCell(nr.querySelector('td'));
+    }
+    function bmAddCol() {
+        const cell = bmNearestTag('TD') || bmNearestTag('TH');
+        if (!cell) { showToast('Pune cursorul într-o celulă.', 'ℹ️'); return; }
+        const table = cell.closest('table');
+        table.querySelectorAll('tr').forEach(row => {
+            const cells = [...row.querySelectorAll('td,th')];
+            const idx = cells.indexOf(cell) !== -1 ? cells.indexOf(cell) : cells.length - 1;
+            const nc = row.querySelector('th') ? document.createElement('th') : document.createElement('td');
+            nc.innerHTML = '&nbsp;';
+            cells[idx + 1] ? row.insertBefore(nc, cells[idx + 1]) : row.appendChild(nc);
+        });
+    }
+    function bmDelRow() {
+        const cell = bmNearestTag('TD') || bmNearestTag('TH');
+        if (!cell) return;
+        cell.closest('tr').remove();
+    }
+    function bmDelCol() {
+        const cell = bmNearestTag('TD') || bmNearestTag('TH');
+        if (!cell) return;
+        const table = cell.closest('table');
+        const cells = [...cell.closest('tr').querySelectorAll('td,th')];
+        const idx = cells.indexOf(cell);
+        table.querySelectorAll('tr').forEach(row => {
+            const rc = [...row.querySelectorAll('td,th')];
+            if (rc[idx]) rc[idx].remove();
+        });
+    }
+
+    // ───────────────────────────────────────────────
+    // Export PDF complet (toate paginile, nu doar ecranul)
+    // ───────────────────────────────────────────────
+    async function exportBehaviorPDF() {
+        const paper = document.getElementById('bmPaper');
+        const btn = document.querySelector('.bm-btn.pdf');
+        btn.textContent = '⏳ Se generează...';
+        btn.disabled = true;
+
+        const safeName = (bmPatientName || 'plan').replace(/[^a-zA-Z0-9_\- ]/g, '').trim() || 'plan';
+        const fileName = `Plan_Comportament_${safeName}.pdf`;
+
+        const opt = {
+            margin:       [15, 15, 15, 15],   // mm: top, left, bottom, right
+            filename:     fileName,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        try {
+            await html2pdf().set(opt).from(paper).save();
+        } catch(e) {
+            showToast('Eroare la generarea PDF: ' + e.message, '❌');
+        }
+
+        btn.textContent = '🖨️ PDF';
+        btn.disabled = false;
+    }
+</script>
+
 </body>
 </html>
