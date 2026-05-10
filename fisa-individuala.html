@@ -330,15 +330,37 @@
 
     // ── CREARE SEDINTA NOUA ───────────────────────────────────────
     function createNewSession() {
+        // Moștenim categoriile și obiectivele din ultima ședință (fără scoruri)
+        let inheritedCategories = [];
+        if (sessions.length > 0) {
+            const lastSession = sessions[sessions.length - 1];
+            inheritedCategories = (lastSession.categories || []).map(cat => ({
+                id: uid(),
+                catName: cat.catName,
+                subItems: (cat.subItems || []).map(item => ({
+                    id: uid(),
+                    name: item.name,
+                    scores: '',          // scorurile se resetează pentru ședința nouă
+                    locatie: item.locatie || '',
+                    persoana: item.persoana || '',
+                    detalii_extra: item.detalii_extra || '',
+                    completed: false
+                }))
+            }));
+        }
+
         const s = {
             id: uid(),
             date: new Date().toISOString().split('T')[0],
             obs: '',
-            categories: []
+            categories: inheritedCategories
         };
         sessions.push(s);
         renderSidebar();
         selectSession(s.id);
+        if (inheritedCategories.length > 0) {
+            showToast(`${inheritedCategories.length} categorii moștenite din ședința anterioară 📋`);
+        }
     }
 
     // ── STERGERE SEDINTA ──────────────────────────────────────────

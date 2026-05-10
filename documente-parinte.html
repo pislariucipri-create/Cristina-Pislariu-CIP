@@ -4,165 +4,521 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plan de Intervenție | Cristina Pîslariu</title>
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;700&family=Dancing+Script:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Dancing+Script:wght@500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        .word-container { padding: 2rem 0; display: flex; flex-direction: column; align-items: center; background-color: #e0e0e0; min-height: 100vh; font-family: 'Times New Roman', Times, serif; }
-        .paper { background: white; width: 210mm; min-height: 297mm; padding: 20mm; box-shadow: 0 0 15px rgba(0,0,0,0.2); color: #000; position: relative; }
-        .doc-header-top { display: flex; justify-content: space-between; font-size: 14px; line-height: 1.3; margin-bottom: 40px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
-        .doc-title-section { text-align: center; margin-bottom: 5px; }
-        .doc-title-section h1 { font-size: 26px; font-weight: bold; text-transform: uppercase; }
-        .doc-date-cursive { font-family: 'Dancing Script', cursive; font-size: 22px; text-align: center; margin-bottom: 30px; }
-        
-        .info-list-vertical { margin-bottom: 30px; }
-        .info-group-title { font-family: 'Dancing Script', cursive; font-size: 24px; font-weight: 700; margin-bottom: 15px; display: block; border-bottom: 1px solid #000; width: fit-content; }
-        .info-line { margin-bottom: 12px; font-size: 16px; font-weight: bold; display: flex; flex-wrap: wrap; align-items: baseline; width: 100%; }
-        .info-line span { font-weight: normal; border-bottom: 1px dotted #999; padding-left: 8px; flex: 1; min-width: 200px; display: inline-block; word-break: break-word; }
+        body { font-family: 'Quicksand', sans-serif; background: #e0dbd5; }
 
-        /* TABEL ABA - Adăugat conform cerinței tale */
-        .section-title { font-weight: bold; text-transform: uppercase; margin-top: 25px; font-size: 16px; border-bottom: 1px solid #000; display: block; margin-bottom: 10px; }
-        .intervention-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 13px; table-layout: fixed; }
-        .intervention-table th { background: #f2f2f2; border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; }
-        .intervention-table td { border: 1px solid #000; padding: 8px; vertical-align: top; word-break: break-word; }
+        /* NAV BAR */
+        .nav-bar {
+            position: sticky; top: 0; z-index: 200;
+            background: #3e2723; height: 48px;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+            gap: 8px;
+        }
+        .nav-bar-left  { display: flex; align-items: center; gap: 6px; }
+        .nav-bar-right { display: flex; align-items: center; gap: 6px; }
+        .btn-nav {
+            background: rgba(255,255,255,0.13); color: white; border: none;
+            padding: 5px 13px; border-radius: 5px; cursor: pointer;
+            font-family: 'Quicksand', sans-serif; font-weight: 700; font-size: 0.8rem;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: 0.15s;
+        }
+        .btn-nav:hover { background: rgba(255,255,255,0.26); }
+        .btn-nav.save  { background: #2e7d32; }
+        .btn-nav.save:hover  { background: #1b5e20; }
+        .btn-nav.pdf   { background: #5d4037; }
+        .btn-nav.pdf:hover   { background: #4e342e; }
+        .nav-title { color: rgba(255,255,255,0.75); font-size: 0.85rem; font-weight: 700; margin-left: 6px; }
 
-        .document-content { margin-top: 20px; line-height: 1.8; min-height: 200px; font-size: 17px; text-align: justify; }
-        
-        .toolbar { position: sticky; top: 0; z-index: 100; background: #f8f9fa; width: 100%; padding: 10px; display: flex; justify-content: center; gap: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-family: 'Quicksand', sans-serif; }
-        .btn-action { padding: 8px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-save { background: #2e7d32; color: white; }
-        .btn-print { background: #6b8e23; color: white; }
+        /* FORMAT BAR */
+        .fmt-bar {
+            position: sticky; top: 48px; z-index: 190;
+            background: #faf7f3; border-bottom: 1px solid #ddd5c8;
+            padding: 5px 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 2px;
+        }
+        .sep { width: 1px; height: 22px; background: #ccc; margin: 0 4px; flex-shrink: 0; }
+        .fb {
+            background: none; border: 1px solid transparent; border-radius: 3px;
+            padding: 3px 7px; cursor: pointer; font-size: 0.8rem; color: #3e2723;
+            font-family: 'Quicksand', sans-serif; transition: 0.12s;
+            display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;
+        }
+        .fb:hover { background: #ede8e2; border-color: #c9bbae; }
+        .fb.on    { background: #ddd5cc; border-color: #b5a396; }
+        .fsel {
+            border: 1px solid #ccc; border-radius: 3px; padding: 3px 5px;
+            font-family: 'Quicksand', sans-serif; font-size: 0.8rem;
+            background: white; color: #3e2723; cursor: pointer; max-width: 130px;
+        }
+        .clr-wrap { position: relative; width: 26px; height: 26px; border-radius: 4px; overflow: hidden; border: 1px solid #ccc; }
+        .clr-wrap input[type=color] { position: absolute; top: -4px; left: -4px; width: 38px; height: 38px; border: none; padding: 0; cursor: pointer; background: none; }
+        .lbl { font-size: 0.7rem; color: #999; padding: 0 2px; }
 
-        .editable-field:focus { background-color: #fffdf0; outline: 1px dashed #ccc; }
-        @media print { .toolbar, header { display: none !important; } .word-container { padding: 0; background: none; } .paper { box-shadow: none; width: 100%; padding: 0; } }
+        /* ZONA DOCUMENT */
+        .doc-zone {
+            padding: 28px 16px 60px;
+            min-height: calc(100vh - 98px);
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .paper {
+            background: white;
+            width: 210mm; min-height: 297mm;
+            padding: 20mm 22mm;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+            color: #000;
+            font-family: 'Times New Roman', serif;
+            font-size: 13pt; line-height: 1.65;
+            outline: none;
+        }
+        .paper:focus-within { box-shadow: 0 4px 24px rgba(0,0,0,0.2), 0 0 0 3px rgba(129,164,115,0.35); }
+
+        /* Stiluri document */
+        .paper h1 { font-size: 20pt; text-align: center; text-transform: uppercase; margin: 14px 0 8px; }
+        .paper h2 { font-size: 15pt; margin: 14px 0 6px; border-bottom: 1px solid #aaa; padding-bottom: 3px; }
+        .paper h3 { font-size: 12pt; margin: 10px 0 4px; }
+        .paper p  { margin: 5px 0; min-height: 1.65em; }
+        .paper table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 11pt; }
+        .paper table td, .paper table th { border: 1px solid #000; padding: 6px 8px; vertical-align: top; min-width: 40px; }
+        .paper table th { background: #f0f0f0; font-weight: bold; text-align: center; }
+        .paper ul, .paper ol { margin: 6px 0 6px 24px; }
+        .paper li { margin: 3px 0; }
+        .paper blockquote { border-left: 3px solid #81a473; margin: 8px 0; padding: 5px 14px; color: #555; font-style: italic; }
+        .paper hr { border: none; border-top: 1px solid #bbb; margin: 14px 0; }
+        .paper a { color: #2e7d32; }
+
+        /* Loading */
+        .loading { display: flex; align-items: center; justify-content: center; min-height: 60vh; color: #666; font-size: 1.1rem; gap: 10px; }
+
+        /* VEDERE PARINTE */
+        .p-wrap { max-width: 900px; margin: 36px auto; padding: 0 20px 60px; }
+        .p-header {
+            background: linear-gradient(135deg, #4e3629, #6d4a37);
+            color: white; border-radius: 18px; padding: 26px 32px;
+            margin-bottom: 26px; text-align: center;
+        }
+        .p-header h1 { font-size: 1.55rem; margin-bottom: 7px; }
+        .p-header p  { opacity: .8; font-size: .92rem; }
+        .p-header .badge {
+            display: inline-block; margin-top: 10px;
+            background: rgba(255,255,255,.18); padding: 3px 13px;
+            border-radius: 20px; font-size: .78rem; font-weight: 700;
+        }
+        .p-noplan {
+            background: white; border-radius: 18px; text-align: center;
+            padding: 3.5rem 2rem; color: #aaa;
+            box-shadow: 0 4px 18px rgba(0,0,0,.05);
+        }
+        .p-noplan .ico { font-size: 2.8rem; display: block; margin-bottom: .9rem; }
+        .p-planbox {
+            background: white; border-radius: 18px;
+            box-shadow: 0 4px 18px rgba(0,0,0,.07);
+            padding: 28px 32px;
+            font-family: 'Times New Roman', serif; font-size: 12.5pt; line-height: 1.7;
+        }
+        .p-planbox table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 11pt; }
+        .p-planbox td, .p-planbox th { border: 1px solid #000; padding: 6px 8px; }
+        .p-planbox th { background: #f0f0f0; font-weight: bold; text-align: center; }
+        .p-planbox h1 { font-size: 18pt; text-align: center; text-transform: uppercase; margin: 12px 0 6px; }
+        .p-planbox h2 { font-size: 14pt; margin: 12px 0 5px; border-bottom: 1px solid #aaa; padding-bottom: 3px; }
+        .p-planbox h3 { font-size: 12pt; margin: 10px 0 4px; }
+        .p-planbox p  { margin: 5px 0; }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 22px; right: 22px;
+            background: #3e2723; color: white; padding: 13px 20px;
+            border-radius: 14px; font-weight: 600;
+            box-shadow: 0 6px 22px rgba(0,0,0,.2); z-index: 9999;
+            display: none; font-size: .88rem; max-width: 320px;
+        }
+        .toast.show { display: flex; align-items: center; gap: 9px; }
+
+        @media print {
+            .nav-bar, .fmt-bar { display: none !important; }
+            body { background: white; }
+            .doc-zone { padding: 0; }
+            .paper { box-shadow: none; width: 100%; min-height: auto; padding: 12mm; }
+            .p-header { display: none; }
+            .p-wrap { margin: 0; padding: 0; }
+            .p-planbox { box-shadow: none; padding: 8mm; }
+        }
+        @media (max-width: 820px) {
+            .paper { width: 100%; padding: 10mm; }
+            .doc-zone { padding: 10px 0 40px; }
+        }
     </style>
 </head>
 <body>
 
-    <header id="siteHeader" style="background:#4e3629; padding: 10px; text-align: center;">
-        <a href="fisa-notare.html" style="color:white; text-decoration:none; font-family:Quicksand; font-weight:bold;">⬅ Înapoi la listă</a>
-    </header>
+<div id="toast" class="toast"></div>
 
-    <main class="word-container">
-        <div class="toolbar">
-            <button id="btnSave" class="btn-action btn-save" onclick="saveFullDocument()">💾 Salvează Planul</button>
-            <button class="btn-action btn-print" onclick="window.print()">🖨️ Descarcă PDF</button>
-        </div>
+<!-- Nav bar -->
+<div class="nav-bar" id="navBar" style="display:none;">
+    <div class="nav-bar-left"  id="navLeft"></div>
+    <div class="nav-bar-right" id="navRight"></div>
+</div>
 
-        <article class="paper" id="editablePaper">
-            <div class="doc-header-top">
-                <div class="editable-field">
-                    <strong>Cristina Pîslariu - Cabinet individual de psihologie</strong><br>
-                    Str. Ion Creangă, nr 1, Fălticeni, Suceava<br>
-                    CIF: 54275086
-                </div>
-                <div style="text-align:right" class="editable-field">
-                    Contact: 0735 101 358<br>
-                    cipislariucristina@gmail.com
-                </div>
-            </div>
+<!-- Format bar (psiholog only) -->
+<div class="fmt-bar" id="fmtBar" style="display:none;">
 
-            <div class="doc-title-section">
-                <h1 class="editable-field">Plan de intervenție</h1>
-            </div>
-            <div class="doc-date-cursive">
-                data: <span id="currentDate" class="editable-field">..........</span>
-            </div>
+    <button class="fb" onclick="ex('undo')" title="Ctrl+Z">↩</button>
+    <button class="fb" onclick="ex('redo')" title="Ctrl+Y">↪</button>
+    <div class="sep"></div>
 
-            <div class="info-list-vertical">
-                <span class="info-group-title editable-field">Date personale:</span>
-                <div class="info-line">Nume copil: <span id="childName" class="editable-field">..........</span></div>
-                <div class="info-line">Data nașterii: <span id="childBirth" class="editable-field">..........</span></div>
-                <div class="info-line">CNP: <span id="childCNP" class="editable-field">..........</span></div>
-                <div class="info-line">Persoane de contact: <span id="childContact" class="editable-field">..........</span></div>
-                <div class="info-line">Diagnostic: <span id="childDiag" class="editable-field">..........</span></div>
-                <div class="info-line">Tratament medicamentos: <span id="childMeds" class="editable-field">..........</span></div>
-            </div>
+    <select class="fsel" onchange="blk(this.value);this.value=''" title="Stil paragraf">
+        <option value="">Stil…</option>
+        <option value="p">Normal</option>
+        <option value="h1">Titlu 1</option>
+        <option value="h2">Titlu 2</option>
+        <option value="h3">Titlu 3</option>
+        <option value="blockquote">Citat</option>
+        <option value="pre">Preformatat</option>
+    </select>
 
-            <span class="section-title">4. Strategii de Intervenție</span>
-            <table class="intervention-table">
-                <thead>
-                    <tr>
-                        <th style="width: 20%;">Domeniu</th>
-                        <th style="width: 20%;">Subdomeniu</th>
-                        <th style="width: 25%;">Strategii (Antecedente / Înlocuire)</th>
-                        <th style="width: 15%;">Nivel Prompt</th>
-                        <th style="width: 20%;">Observații</th>
-                    </tr>
-                </thead>
-                <tbody id="interventionTableBody">
-                    </tbody>
-            </table>
+    <select class="fsel" style="width:55px;" onchange="ex('fontSize',this.value);this.value=''" title="Mărime">
+        <option value="">Pt…</option>
+        <option value="1">8</option>
+        <option value="2">10</option>
+        <option value="3">12</option>
+        <option value="4">14</option>
+        <option value="5">18</option>
+        <option value="6">24</option>
+        <option value="7">36</option>
+    </select>
 
-            <div class="document-content editable-field" id="mainReportContent">
-                <p><strong>Obiective și recomandări:</strong></p>
-                <p>Introduceți aici detaliile suplimentare...</p>
-            </div>
-        </article>
-    </main>
+    <select class="fsel" onchange="ex('fontName',this.value);this.value=''" title="Font">
+        <option value="">Font…</option>
+        <option value="Times New Roman">Times New Roman</option>
+        <option value="Arial">Arial</option>
+        <option value="Georgia">Georgia</option>
+        <option value="Courier New">Courier New</option>
+        <option value="Verdana">Verdana</option>
+        <option value="Dancing Script">Dancing Script</option>
+    </select>
+    <div class="sep"></div>
+
+    <button class="fb" onclick="ex('bold')"          title="Bold Ctrl+B"><b>B</b></button>
+    <button class="fb" onclick="ex('italic')"        title="Italic Ctrl+I"><i>I</i></button>
+    <button class="fb" onclick="ex('underline')"     title="Subliniat Ctrl+U"><u>U</u></button>
+    <button class="fb" onclick="ex('strikeThrough')" title="Tăiat"><s>S</s></button>
+    <button class="fb" onclick="ex('superscript')"   title="Superscript">x²</button>
+    <button class="fb" onclick="ex('subscript')"     title="Subscript">x₂</button>
+    <div class="sep"></div>
+
+    <span class="lbl">Text</span>
+    <div class="clr-wrap" title="Culoare text"><input type="color" value="#000000" oninput="ex('foreColor',this.value)"></div>
+    <span class="lbl">Fond</span>
+    <div class="clr-wrap" title="Culoare fundal text"><input type="color" value="#ffffff" oninput="ex('hiliteColor',this.value)"></div>
+    <div class="sep"></div>
+
+    <button class="fb" onclick="ex('justifyLeft')"   title="Stânga">⬅</button>
+    <button class="fb" onclick="ex('justifyCenter')" title="Centru">↔</button>
+    <button class="fb" onclick="ex('justifyRight')"  title="Dreapta">➡</button>
+    <button class="fb" onclick="ex('justifyFull')"   title="Justified">≡</button>
+    <div class="sep"></div>
+
+    <button class="fb" onclick="ex('insertUnorderedList')" title="Listă buline">• Listă</button>
+    <button class="fb" onclick="ex('insertOrderedList')"   title="Listă numerotată">1. Listă</button>
+    <button class="fb" onclick="ex('indent')"   title="Indentare">→|</button>
+    <button class="fb" onclick="ex('outdent')"  title="Deindentare">|←</button>
+    <div class="sep"></div>
+
+    <button class="fb" onclick="doInsertTable()"   title="Tabel nou">＋ Tabel</button>
+    <button class="fb" onclick="doAddRow()"         title="Adaugă rând">＋ Rând</button>
+    <button class="fb" onclick="doAddCol()"         title="Adaugă coloană">＋ Col</button>
+    <button class="fb" onclick="doDelRow()"         title="Șterge rând" style="color:#c0392b;">− Rând</button>
+    <button class="fb" onclick="doDelCol()"         title="Șterge coloană" style="color:#c0392b;">− Col</button>
+    <div class="sep"></div>
+
+    <button class="fb" onclick="doHR()"    title="Linie separatoare">── Linie</button>
+    <button class="fb" onclick="doLink()"  title="Inserează link">🔗 Link</button>
+    <button class="fb" onclick="doImage()" title="Inserează imagine (URL)">🖼 Img</button>
+    <div class="sep"></div>
+
+    <button class="fb" onclick="ex('removeFormat')" title="Șterge formatarea" style="color:#795548;">✕ Format</button>
+</div>
+
+<!-- Conținut -->
+<div id="appContent">
+    <div class="loading"><span>⏳</span> Se încarcă...</div>
+</div>
 
 <script>
     const SUPABASE_URL = 'https://yexvpbgkrzerkizscgfn.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_q52fh6Xa3yNm3q0akTrKKw_7AlxLrCU';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const patientId = urlParams.get('id');
-    let planRecordId = null;
+    function getSession() { try { return JSON.parse(sessionStorage.getItem('session')||'null'); } catch { return null; } }
+
+    const session = getSession();
+    const pid = new URLSearchParams(window.location.search).get('id');
+    let currentPatientId = null, planId = null, paper = null;
 
     window.onload = async function() {
-        if (!patientId) return;
-
-        const { data: patient } = await _supabase.from('patients').select('*').eq('id', patientId).single();
-        if (patient) {
-            document.getElementById("childName").innerText = patient.name;
-            document.getElementById("childDiag").innerText = patient.diagnosis || "ASD";
-        }
-
-        const { data: plan } = await _supabase.from('intervention_plans').select('*').eq('patient_id', patientId).maybeSingle();
-        
-        if (plan) {
-            planRecordId = plan.id;
-            document.getElementById("editablePaper").innerHTML = plan.html_content;
-        } else {
-            await syncFromFisaNotare();
-        }
-        
-        document.querySelectorAll('.editable-field, td').forEach(f => f.contentEditable = "true");
+        if (!session) { window.location.href = 'index.html'; return; }
+        session.role === 'psiholog' ? await initPsiholog() : await initParinte();
     };
 
-    async function syncFromFisaNotare() {
-        const { data: fisa } = await _supabase.from('fisa_data').select('data').eq('patient_id', patientId).single();
-        if (!fisa || !fisa.data) return;
+    /* ═══════════════════════════════════
+       PSIHOLOG
+    ═══════════════════════════════════ */
+    async function initPsiholog() {
+        if (!pid) { showErr('Niciun copil selectat. Mergi la <a href="fisa-notare.html">participanți</a>.'); return; }
+        currentPatientId = pid;
 
-        const tbody = document.getElementById("interventionTableBody");
-        tbody.innerHTML = "";
+        document.getElementById('navBar').style.display = 'flex';
+        document.getElementById('fmtBar').style.display = 'flex';
 
-        fisa.data.forEach(cat => {
-            cat.subItems.forEach(item => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td><b>${cat.catName}</b></td>
-                    <td>${item.name}</td>
-                    <td><b>Antecedente:</b> ... <br><b>Înlocuire:</b> ...</td>
-                    <td>Prompt verbal</td>
-                    <td>${item.detalii_extra || ''}</td>
-                `;
-                tbody.appendChild(row);
-            });
-        });
-        document.getElementById("currentDate").innerText = new Date().toLocaleDateString('ro-RO');
+        document.getElementById('navLeft').innerHTML =
+            '<a class="btn-nav" href="index.html">🏠 Acasă</a>' +
+            '<a class="btn-nav" href="fisa-notare.html">← Participanți</a>' +
+            '<span class="nav-title" id="ntitle">Plan de intervenție</span>';
+        document.getElementById('navRight').innerHTML =
+            '<button class="btn-nav save" onclick="savePlan()">💾 Salvează</button>' +
+            '<button class="btn-nav pdf"  onclick="window.print()">🖨️ PDF</button>';
+
+        const [{ data: patient }, { data: plan }] = await Promise.all([
+            _supabase.from('patients').select('*').eq('id', pid).single(),
+            _supabase.from('intervention_plans').select('*').eq('patient_id', pid).maybeSingle()
+        ]);
+
+        if (patient) document.getElementById('ntitle').textContent = 'Plan — ' + patient.name;
+
+        if (plan) {
+            planId = plan.id;
+            buildEditor(patient, plan.html_content, null);
+        } else {
+            const { data: fisa } = await _supabase.from('fisa_data').select('data').eq('patient_id', pid).maybeSingle();
+            buildEditor(patient, null, fisa ? fisa.data : null);
+        }
     }
 
-    async function saveFullDocument() {
-        const htmlToSave = document.getElementById("editablePaper").innerHTML;
-        if (planRecordId) {
-            await _supabase.from('intervention_plans').update({ html_content: htmlToSave, updated_at: new Date().toISOString() }).eq('id', planRecordId);
-        } else {
-            const { data } = await _supabase.from('intervention_plans').insert([{ patient_id: patientId, html_content: htmlToSave }]).select().single();
-            if (data) planRecordId = data.id;
+    function buildEditor(patient, html, fisaData) {
+        const name  = patient ? patient.name : '';
+        const diag  = patient ? (patient.diagnosis || 'ASD') : 'ASD';
+        const today = new Date().toLocaleDateString('ro-RO');
+
+        if (!html) {
+            let rows = '';
+            if (fisaData && fisaData.length) {
+                let cats = [];
+                if (fisaData[0] && fisaData[0].catName !== undefined) {
+                    cats = fisaData;
+                } else {
+                    const seen = new Set();
+                    fisaData.forEach(s => (s.categories||[]).forEach(c => { if (!seen.has(c.catName)) { seen.add(c.catName); cats.push(c); } }));
+                }
+                cats.forEach(c => (c.subItems||[]).forEach(it =>
+                    rows += '<tr><td><b>'+(c.catName||'')+'</b></td><td>'+(it.name||'')+'</td><td>Antecedente: …<br>Înlocuire: …</td><td>Prompt verbal</td><td>'+(it.detalii_extra||'')+'</td></tr>'
+                ));
+            }
+
+            html =
+                '<p style="display:flex;justify-content:space-between;font-size:11pt;">' +
+                    '<span><strong>Cristina Pîslariu — Cabinet individual de psihologie</strong><br>' +
+                    'Str. Ion Creangă, nr. 1, Fălticeni, Suceava | CIF: 54275086</span>' +
+                    '<span style="text-align:right">Tel: 0735 101 358<br>cipislariucristina@gmail.com</span>' +
+                '</p><hr>' +
+                '<h1>Plan de Intervenție</h1>' +
+                '<p style="text-align:center;font-family:\'Dancing Script\',cursive;font-size:15pt;">Data: '+today+'</p><br>' +
+                '<h2>Date personale</h2>' +
+                '<p><strong>Nume copil:</strong> '+name+'</p>' +
+                '<p><strong>Data nașterii:</strong> ..........</p>' +
+                '<p><strong>CNP:</strong> ..........</p>' +
+                '<p><strong>Persoane de contact:</strong> ..........</p>' +
+                '<p><strong>Diagnostic:</strong> '+diag+'</p>' +
+                '<p><strong>Tratament medicamentos:</strong> ..........</p><br>' +
+                '<h2>Strategii de Intervenție</h2>' +
+                '<table><thead><tr>' +
+                    '<th style="width:20%">Domeniu</th><th style="width:20%">Subdomeniu</th>' +
+                    '<th style="width:25%">Strategii</th><th style="width:15%">Nivel Prompt</th>' +
+                    '<th style="width:20%">Observații</th>' +
+                '</tr></thead><tbody>' + (rows || '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>') + '</tbody></table><br>' +
+                '<h2>Obiective și recomandări</h2>' +
+                '<p>Introduceți aici obiectivele și recomandările...</p>';
         }
-        alert("Salvat cu succes!");
+
+        document.getElementById('appContent').innerHTML =
+            '<div class="doc-zone"><div class="paper" id="editablePaper" contenteditable="true" spellcheck="true">'+html+'</div></div>';
+
+        paper = document.getElementById('editablePaper');
+
+        // Ctrl+S → salvează
+        paper.addEventListener('keydown', e => {
+            if ((e.ctrlKey||e.metaKey) && e.key==='s') { e.preventDefault(); savePlan(); }
+        });
+
+        // Tab în tabele → celula următoare / rând nou
+        paper.addEventListener('keydown', e => {
+            if (e.key !== 'Tab') return;
+            const cell = nearestTag('TD') || nearestTag('TH');
+            if (!cell) return;
+            e.preventDefault();
+            const cells = [...cell.closest('table').querySelectorAll('td,th')];
+            const idx = cells.indexOf(cell);
+            if (idx < cells.length - 1) { focusCell(cells[idx+1]); }
+            else { doAddRow(); }
+        });
+    }
+
+    async function savePlan() {
+        if (!paper) return;
+        const html = paper.innerHTML;
+        let res;
+        if (planId) {
+            res = await _supabase.from('intervention_plans').update({ html_content: html, updated_at: new Date().toISOString() }).eq('id', planId);
+        } else {
+            const ins = await _supabase.from('intervention_plans').insert([{ patient_id: currentPatientId, html_content: html }]).select().single();
+            if (ins.data) planId = ins.data.id;
+            res = ins;
+        }
+        res && res.error ? toast('Eroare: '+res.error.message, '❌') : toast('Planul a fost salvat și trimis părintelui! ✅');
+    }
+
+    /* ═══════════════════════════════════
+       COMENZI EDITOR
+    ═══════════════════════════════════ */
+    function ex(cmd, val) { document.execCommand(cmd, false, val||null); if(paper) paper.focus(); }
+    function blk(tag) { if(!tag) return; document.execCommand('formatBlock', false, tag); if(paper) paper.focus(); }
+
+    function nearestTag(tag) {
+        const sel = window.getSelection();
+        if (!sel || !sel.anchorNode) return null;
+        let node = sel.anchorNode;
+        while (node && node !== paper) { if (node.nodeName === tag) return node; node = node.parentNode; }
+        return null;
+    }
+    function focusCell(el) {
+        if (!el) return;
+        el.focus();
+        const r = document.createRange(); r.selectNodeContents(el); r.collapse(false);
+        const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    }
+
+    function doInsertTable() {
+        const cols = parseInt(prompt('Câte coloane?','3')||'3');
+        const rows = parseInt(prompt('Câte rânduri (fără header)?','3')||'3');
+        if (!cols || !rows) return;
+        let h = '<table><thead><tr>';
+        for (let c=0;c<cols;c++) h += '<th>Coloana '+(c+1)+'</th>';
+        h += '</tr></thead><tbody>';
+        for (let r=0;r<rows;r++) { h += '<tr>'; for (let c=0;c<cols;c++) h += '<td>&nbsp;</td>'; h += '</tr>'; }
+        h += '</tbody></table><p><br></p>';
+        ex('insertHTML', h);
+    }
+
+    function doAddRow() {
+        const cell = nearestTag('TD') || nearestTag('TH');
+        if (!cell) { toast('Pune cursorul într-o celulă din tabel.','ℹ️'); return; }
+        const row = cell.closest('tr');
+        const cols = row.querySelectorAll('td,th').length;
+        const nr = document.createElement('tr');
+        for (let i=0;i<cols;i++) { const td=document.createElement('td'); td.innerHTML='&nbsp;'; nr.appendChild(td); }
+        row.after(nr);
+        focusCell(nr.querySelector('td'));
+    }
+
+    function doAddCol() {
+        const cell = nearestTag('TD') || nearestTag('TH');
+        if (!cell) { toast('Pune cursorul într-o celulă din tabel.','ℹ️'); return; }
+        const table = cell.closest('table');
+        table.querySelectorAll('tr').forEach(row => {
+            const cells = [...row.querySelectorAll('td,th')];
+            const idx = cells.indexOf(cell) !== -1 ? cells.indexOf(cell) : cells.length - 1;
+            const nc = row.querySelector('th') ? document.createElement('th') : document.createElement('td');
+            nc.innerHTML = '&nbsp;';
+            cells[idx+1] ? row.insertBefore(nc, cells[idx+1]) : row.appendChild(nc);
+        });
+    }
+
+    function doDelRow() {
+        const cell = nearestTag('TD') || nearestTag('TH');
+        if (!cell) { toast('Pune cursorul într-un rând.','ℹ️'); return; }
+        cell.closest('tr').remove();
+    }
+
+    function doDelCol() {
+        const cell = nearestTag('TD') || nearestTag('TH');
+        if (!cell) { toast('Pune cursorul într-o coloană.','ℹ️'); return; }
+        const table = cell.closest('table');
+        table.querySelectorAll('tr').forEach(row => {
+            const cells = [...row.querySelectorAll('td,th')];
+            const idx = cells.findIndex(c => c === cell);
+            if (idx !== -1 && cells[idx]) cells[idx].remove();
+        });
+    }
+
+    function doHR()    { ex('insertHTML','<hr><p><br></p>'); }
+    function doLink()  { const u=prompt('URL:','https://'); if(u) ex('createLink',u); }
+    function doImage() { const u=prompt('URL imagine:','https://'); if(u) ex('insertHTML','<img src="'+u+'" style="max-width:100%;height:auto;">'); }
+
+    /* ═══════════════════════════════════
+       PARINTE
+    ═══════════════════════════════════ */
+    async function initParinte() {
+        document.getElementById('navBar').style.display = 'flex';
+        document.getElementById('navLeft').innerHTML =
+            '<a class="btn-nav" href="index.html">🏠 Acasă</a>' +
+            '<span class="nav-title">📋 Planul meu de intervenție</span>';
+        document.getElementById('navRight').innerHTML =
+            '<button class="btn-nav pdf" onclick="window.print()">🖨️ PDF</button>';
+
+        const { data: patient } = await _supabase.from('patients').select('*').eq('email', session.email).maybeSingle();
+        if (!patient) {
+            document.getElementById('appContent').innerHTML =
+                '<div class="p-wrap"><div class="p-noplan"><span class="ico">⚠️</span>' +
+                '<p>Nu am găsit un profil asociat contului tău.</p>' +
+                '<p style="margin-top:8px;font-size:.88rem;color:#bbb;">Contactează psihologul.</p></div></div>';
+            return;
+        }
+
+        const { data: plan } = await _supabase.from('intervention_plans').select('*').eq('patient_id', patient.id).maybeSingle();
+        const upd = plan && plan.updated_at
+            ? new Date(plan.updated_at).toLocaleDateString('ro-RO',{day:'2-digit',month:'long',year:'numeric'}) : null;
+
+        const hdr =
+            '<div class="p-wrap">' +
+            '<div class="p-header">' +
+            '<h1>Planul de intervenție pentru '+patient.name+'</h1>' +
+            '<p>Cabinet individual de psihologie — Cristina Pîslariu</p>' +
+            (upd ? '<span class="badge">Actualizat: '+upd+'</span>' : '') +
+            '</div>';
+
+        if (!plan || !plan.html_content) {
+            document.getElementById('appContent').innerHTML = hdr +
+                '<div class="p-noplan"><span class="ico">📄</span>' +
+                '<p>Planul nu a fost încă creat de psiholog.</p>' +
+                '<p style="margin-top:8px;font-size:.88rem;color:#bbb;">Revino mai târziu sau contactează cabinetul.</p>' +
+                '</div></div>';
+            return;
+        }
+
+        document.getElementById('appContent').innerHTML = hdr +
+            '<div class="p-planbox">'+plan.html_content+'</div></div>';
+
+        // Read-only
+        document.getElementById('appContent').querySelectorAll('[contenteditable]').forEach(el => {
+            el.contentEditable = 'false';
+            el.style.outline = 'none';
+        });
+    }
+
+    /* ── HELPERS ── */
+    function showErr(msg) {
+        document.getElementById('appContent').innerHTML =
+            '<div style="text-align:center;padding:4rem 2rem;color:#c62828;">' +
+            '<span style="font-size:2.5rem;display:block;margin-bottom:1rem;">⚠️</span><p>'+msg+'</p></div>';
+    }
+    function toast(msg, icon) {
+        icon = icon||'✅';
+        const t = document.getElementById('toast');
+        t.innerHTML = '<span>'+icon+'</span><span>'+msg+'</span>';
+        t.classList.add('show');
+        clearTimeout(t._t);
+        t._t = setTimeout(()=>t.classList.remove('show'), 3500);
     }
 </script>
 </body>
