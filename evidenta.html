@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evidență Cabinet | Cristina Pîslariu</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body { background: var(--crem-fundal); }
+        header { background: var(--alb-curat); padding: 0.9rem 5%; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+        .nav-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+        .btn-back { text-decoration: none; color: var(--text-maro-inchis); font-weight: 700; display: flex; align-items: center; gap: 5px; transition: 0.2s; }
+        .btn-back:hover { color: var(--verde-sage); }
+        .main { max-width: 1200px; margin: 0 auto; padding: 2.5rem 5%; }
+
+        /* STATS PRINCIPALE */
+        .stats-main { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 30px; }
+        .stat-card { background: white; border-radius: 18px; padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border-top: 4px solid var(--verde-sage); }
+        .stat-card.orange { border-top-color: #e65100; }
+        .stat-card.blue { border-top-color: #1565c0; }
+        .stat-card.purple { border-top-color: #6a1b9a; }
+        .stat-card .num { font-family: var(--font-serif); font-size: 3rem; color: var(--text-maro-inchis); font-weight: 700; line-height: 1; }
+        .stat-card .lbl { font-size: 0.82rem; color: #999; margin-top: 6px; }
+        .stat-card .sub { font-size: 0.75rem; color: var(--verde-sage); font-weight: 700; margin-top: 4px; }
+
+        /* SECTIUNI */
+        .section { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); margin-bottom: 24px; }
+        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .section-header h2 { font-family: var(--font-serif); font-size: 1.6rem; color: var(--text-maro-inchis); margin: 0; }
+        .btn-main { background-color: var(--verde-sage); color: white; padding: 0.6rem 1.3rem; border: none; border-radius: 20px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
+        .btn-main:hover { background-color: var(--verde-sage-inchis); }
+        .btn-sec { background: white; color: var(--text-maro-inchis); padding: 0.6rem 1.3rem; border: 1.5px solid #e8e0d8; border-radius: 20px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
+        .btn-sec:hover { border-color: var(--verde-sage); color: var(--verde-sage); }
+
+        /* TABEL COPII */
+        .patient-table { width: 100%; border-collapse: collapse; }
+        .patient-table th { background: #f8f5f0; color: var(--text-maro-inchis); padding: 10px 14px; font-size: 0.8rem; font-weight: 700; text-align: left; border-bottom: 2px solid #eee; }
+        .patient-table td { padding: 12px 14px; border-bottom: 1px solid #f5f0ea; font-size: 0.88rem; vertical-align: middle; }
+        .patient-table tr:last-child td { border-bottom: none; }
+        .patient-table tr:hover td { background: #fdfaf3; }
+        .status-badge { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 0.72rem; font-weight: 700; }
+        .status-activ { background: #e8f5e9; color: #2e7d32; }
+        .status-arhivat { background: #fff3e0; color: #e65100; }
+        .avatar-sm { width: 32px; height: 32px; border-radius: 50%; background: #f0ede8; border: 2px solid var(--verde-sage); overflow: hidden; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; vertical-align: middle; margin-right: 8px; }
+        .avatar-sm img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* REGISTRU SEDINTE */
+        .registru-table { width: 100%; border-collapse: collapse; }
+        .registru-table th { background: #f8f5f0; color: var(--text-maro-inchis); padding: 10px 14px; font-size: 0.8rem; font-weight: 700; text-align: left; border-bottom: 2px solid #eee; }
+        .registru-table td { padding: 10px 14px; border-bottom: 1px solid #f5f0ea; font-size: 0.85rem; }
+        .registru-table tr:last-child td { border-bottom: none; }
+
+        /* FILTRU LUNA */
+        .filter-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+        .filter-bar select, .filter-bar input { border: 1px solid #e8e0d8; border-radius: 10px; padding: 8px 12px; font-family: var(--font-sans); font-size: 0.88rem; background: var(--crem-fundal); outline: none; }
+        .filter-bar select:focus, .filter-bar input:focus { border-color: var(--verde-sage); }
+
+        /* CALENDARUL LUNAR */
+        .month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+        .month-card { background: #fdfaf3; border-radius: 14px; padding: 14px 16px; border-left: 4px solid var(--verde-sage); }
+        .month-card h4 { margin: 0 0 8px; font-size: 1rem; color: var(--text-maro-inchis); }
+        .month-card p { margin: 3px 0; font-size: 0.82rem; color: #666; }
+
+        /* PRINT */
+        @media print {
+            header, .btn-main, .btn-sec, .filter-bar { display: none !important; }
+            .section { box-shadow: none; border: 1px solid #ddd; }
+            body { background: white; }
+        }
+
+        /* TOAST */
+        #customToast { position: fixed; bottom: 25px; right: 25px; background: var(--text-maro-inchis); color: white; padding: 14px 22px; border-radius: 15px; font-weight: 600; box-shadow: 0 8px 25px rgba(0,0,0,0.15); z-index: 9999; font-family: var(--font-sans); font-size: 0.9rem; max-width: 320px; display: flex; align-items: center; gap: 10px; transform: translateX(calc(100% + 40px)); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-left: 4px solid var(--verde-sage); }
+        #customToast.show { transform: translateX(0); }
+
+        @media (max-width: 768px) {
+            .stats-main { grid-template-columns: 1fr 1fr; }
+            .main { padding: 1.5rem 4%; }
+        }
+        @media (max-width: 480px) {
+            .stats-main { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <nav class="nav-bar">
+        <a href="fisa-notare.html" class="btn-back">← Participanți</a>
+        <h3 style="font-family: var(--font-serif); color: var(--verde-sage-inchis); font-size: 1.3rem;">📊 Evidență Cabinet</h3>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn-sec" onclick="window.print()">🖨️ Tipărește</button>
+            <button class="btn-main" onclick="exportFullPDF()">📄 Export PDF complet</button>
+        </div>
+    </nav>
+</header>
+
+<main class="main">
+    <!-- LOADING -->
+    <div id="loadingOverlay" style="text-align:center; padding:5rem; color:#ccc; font-size:1.1rem;">⏳ Se încarcă evidența...</div>
+
+    <!-- STATS -->
+    <div class="stats-main" id="statsMain" style="display:none;"></div>
+
+    <!-- SECTIUNEA 1: LISTA COPII ACTIVI -->
+    <div class="section" id="sec1" style="display:none;">
+        <div class="section-header">
+            <h2>👥 Registru participanți activi</h2>
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="searchPat" placeholder="🔍 Caută după nume..." oninput="filterTable()" style="border:1px solid #e8e0d8; border-radius:10px; padding:7px 12px; font-family:var(--font-sans); font-size:0.85rem; outline:none;">
+            </div>
+        </div>
+        <table class="patient-table" id="patientTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Nume copil</th>
+                    <th>Vârstă</th>
+                    <th>Email părinte</th>
+                    <th>Ședințe</th>
+                    <th>Obiective fin.</th>
+                    <th>Rapoarte lun.</th>
+                    <th>Stare</th>
+                    <th>Acțiuni</th>
+                </tr>
+            </thead>
+            <tbody id="patientTbody"></tbody>
+        </table>
+    </div>
+
+    <!-- SECTIUNEA 2: REGISTRU SEDINTE (filtrat pe luna) -->
+    <div class="section" id="sec2" style="display:none;">
+        <div class="section-header">
+            <h2>📋 Registru ședințe</h2>
+            <div class="filter-bar">
+                <select id="filterMonth" onchange="renderSessionsTable()">
+                    <option value="">Toate lunile</option>
+                </select>
+                <select id="filterPatient" onchange="renderSessionsTable()">
+                    <option value="">Toți participanții</option>
+                </select>
+            </div>
+        </div>
+        <table class="registru-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Data</th>
+                    <th>Copil</th>
+                    <th>Observații</th>
+                    <th>Obiective lucrate</th>
+                    <th>Obiective fin.</th>
+                    <th>Categorii arh.</th>
+                </tr>
+            </thead>
+            <tbody id="sessionTbody"></tbody>
+        </table>
+        <div id="sessionCount" style="margin-top:12px; font-size:0.82rem; color:#999;"></div>
+    </div>
+
+    <!-- SECTIUNEA 3: SUMAR PE LUNI -->
+    <div class="section" id="sec3" style="display:none;">
+        <div class="section-header">
+            <h2>📅 Sumar activitate lunară</h2>
+        </div>
+        <div class="month-grid" id="monthGrid"></div>
+    </div>
+
+    <!-- SECTIUNEA 4: ARHIVA -->
+    <div class="section" id="sec4" style="display:none;">
+        <div class="section-header">
+            <h2>🗄️ Profiluri arhivate</h2>
+            <a href="arhiva.html" class="btn-sec" style="text-decoration:none;">Deschide arhiva completă →</a>
+        </div>
+        <div id="archiveSummary"></div>
+    </div>
+
+</main>
+
+<div id="customToast"></div>
+
+<script>
+    const SUPABASE_URL = 'https://yexvpbgkrzerkizscgfn.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_q52fh6Xa3yNm3q0akTrKKw_7AlxLrCU';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const _session = JSON.parse(sessionStorage.getItem('session') || 'null');
+    if (!_session || _session.role !== 'psiholog') window.location.href = 'index.html';
+
+    const MONTHS_RO = ['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];
+
+    let allPatients = [];
+    let allFise = {};     // patient_id -> sessions[]
+    let allReports = {};  // patient_id -> reports[]
+    let archivedCount = 0;
+    let allSessions = []; // { patientId, patientName, ...session }
+
+    // ════════════════════════════════════════
+    // INIT
+    // ════════════════════════════════════════
+    async function init() {
+        // Pacienți activi
+        const { data: patients } = await _supabase.from('patients').select('*').order('name');
+        allPatients = patients || [];
+
+        // Fise de notare
+        const { data: fiseRows } = await _supabase.from('fisa_data').select('patient_id, data');
+        (fiseRows || []).forEach(row => { allFise[row.patient_id] = row.data || []; });
+
+        // Rapoarte lunare
+        const { data: repsRows } = await _supabase.from('monthly_reports').select('*').order('month', { ascending: false });
+        (repsRows || []).forEach(r => {
+            if (!allReports[r.patient_id]) allReports[r.patient_id] = [];
+            allReports[r.patient_id].push(r);
+        });
+
+        // Arhivă
+        const { count } = await _supabase.from('archived_patients').select('id', { count: 'exact', head: true });
+        archivedCount = count || 0;
+
+        // Construim lista globală de ședințe
+        allSessions = [];
+        allPatients.forEach(p => {
+            const sessions = allFise[p.id] || [];
+            sessions.forEach(s => {
+                allSessions.push({ patientId: p.id, patientName: p.name || '—', ...s });
+            });
+        });
+        allSessions.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+        renderAll();
+    }
+
+    function renderAll() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+
+        // Stats globale
+        const totalSedinte = allSessions.length;
+        const totalObj = allSessions.reduce((a, s) => a + (s.categories||[]).reduce((b,c) => b+(c.subItems||[]).length, 0), 0);
+        const totalDone = allSessions.reduce((a, s) => a + (s.categories||[]).reduce((b,c) => b+(c.subItems||[]).filter(i=>i.completed).length, 0), 0);
+        const totalRapoarte = Object.values(allReports).reduce((a,r) => a+r.length, 0);
+
+        const statsEl = document.getElementById('statsMain');
+        statsEl.style.display = 'grid';
+        statsEl.innerHTML = `
+            <div class="stat-card">
+                <div class="num">${allPatients.length}</div>
+                <div class="lbl">Participanți activi</div>
+                <div class="sub">+ ${archivedCount} arhivați</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="num">${totalSedinte}</div>
+                <div class="lbl">Total ședințe</div>
+                <div class="sub">toate perioadele</div>
+            </div>
+            <div class="stat-card blue">
+                <div class="num">${totalDone}<span style="font-size:1.5rem;">/${totalObj}</span></div>
+                <div class="lbl">Obiective finalizate</div>
+                <div class="sub">${totalObj ? Math.round(totalDone/totalObj*100) : 0}% rată succes</div>
+            </div>
+            <div class="stat-card purple">
+                <div class="num">${totalRapoarte}</div>
+                <div class="lbl">Rapoarte lunare</div>
+                <div class="sub">documente salvate</div>
+            </div>
+        `;
+
+        // Pacienți
+        renderPatientsTable();
+        document.getElementById('sec1').style.display = 'block';
+
+        // Ședințe — filtre
+        buildFilters();
+        renderSessionsTable();
+        document.getElementById('sec2').style.display = 'block';
+
+        // Sumar lunar
+        renderMonthGrid();
+        document.getElementById('sec3').style.display = 'block';
+
+        // Arhivă
+        renderArchiveSummary();
+        document.getElementById('sec4').style.display = 'block';
+    }
+
+    // ════════════════════════════════════════
+    // TABEL PACIENȚI
+    // ════════════════════════════════════════
+    function renderPatientsTable(filter = '') {
+        const tbody = document.getElementById('patientTbody');
+        const filtered = filter ? allPatients.filter(p => (p.name||'').toLowerCase().includes(filter.toLowerCase())) : allPatients;
+        tbody.innerHTML = filtered.map((p, i) => {
+            const sessions = allFise[p.id] || [];
+            const reports = allReports[p.id] || [];
+            const totalSed = sessions.length;
+            const totalDone = sessions.reduce((a,s)=>a+(s.categories||[]).reduce((b,c)=>b+(c.subItems||[]).filter(i=>i.completed).length,0),0);
+            const lastReport = reports[0];
+            return `<tr>
+                <td style="color:#ccc; font-size:0.8rem;">${i+1}</td>
+                <td><span class="avatar-sm">${p.photo ? `<img src="${p.photo}">` : '👤'}</span><strong>${p.name || '—'}</strong></td>
+                <td>${p.age || '—'} ani</td>
+                <td style="font-size:0.8rem; color:#666;">${p.email || '—'}</td>
+                <td><strong>${totalSed}</strong></td>
+                <td><strong style="color:var(--verde-sage);">${totalDone}</strong></td>
+                <td><strong>${reports.length}</strong> ${lastReport ? `<span style="font-size:0.72rem; color:#999;">· ult: ${lastReport.month}</span>` : ''}</td>
+                <td><span class="status-badge status-activ">ACTIV</span></td>
+                <td style="white-space:nowrap;">
+                    <a href="fisa-individuala.html?id=${p.id}" style="font-size:0.78rem; color:var(--verde-sage); text-decoration:none; font-weight:700; margin-right:6px;">📋 Fișă</a>
+                    <a href="rapoarte-lunare.html?id=${p.id}" style="font-size:0.78rem; color:#c79e7f; text-decoration:none; font-weight:700;">📅 Rapoarte</a>
+                </td>
+            </tr>`;
+        }).join('') || '<tr><td colspan="9" style="text-align:center; color:#ccc; padding:2rem;">Niciun participant</td></tr>';
+    }
+
+    function filterTable() {
+        renderPatientsTable(document.getElementById('searchPat').value);
+    }
+
+    // ════════════════════════════════════════
+    // REGISTRU ȘEDINȚE
+    // ════════════════════════════════════════
+    function buildFilters() {
+        const monthsSet = new Set(allSessions.map(s => s.date ? s.date.substring(0,7) : null).filter(Boolean));
+        const months = [...monthsSet].sort().reverse();
+        const mSel = document.getElementById('filterMonth');
+        months.forEach(m => {
+            const [yr, mo] = m.split('-');
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.textContent = MONTHS_RO[parseInt(mo)-1] + ' ' + yr;
+            mSel.appendChild(opt);
+        });
+
+        // Default: luna curentă
+        const now = new Date();
+        const curMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+        if (monthsSet.has(curMonth)) mSel.value = curMonth;
+
+        const pSel = document.getElementById('filterPatient');
+        allPatients.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.name || 'Fără nume';
+            pSel.appendChild(opt);
+        });
+    }
+
+    function renderSessionsTable() {
+        const monthFilter = document.getElementById('filterMonth').value;
+        const patFilter = document.getElementById('filterPatient').value;
+
+        let filtered = allSessions;
+        if (monthFilter) filtered = filtered.filter(s => (s.date||'').startsWith(monthFilter));
+        if (patFilter) filtered = filtered.filter(s => s.patientId === patFilter);
+
+        const tbody = document.getElementById('sessionTbody');
+        tbody.innerHTML = filtered.map((s, i) => {
+            const d = s.date ? new Date(s.date).toLocaleDateString('ro-RO', {day:'2-digit', month:'long', year:'numeric'}) : '—';
+            const total = (s.categories||[]).reduce((a,c)=>a+(c.subItems||[]).length,0);
+            const done = (s.categories||[]).reduce((a,c)=>a+(c.subItems||[]).filter(i=>i.completed).length,0);
+            const archCats = (s.archivedCategories||[]).length;
+            return `<tr>
+                <td style="color:#ccc; font-size:0.8rem;">${i+1}</td>
+                <td style="white-space:nowrap; font-weight:700;">${d}</td>
+                <td><strong>${s.patientName}</strong></td>
+                <td style="font-size:0.82rem; color:#666; max-width:250px;">${s.obs || '—'}</td>
+                <td style="text-align:center;"><strong>${total}</strong></td>
+                <td style="text-align:center;"><strong style="color:var(--verde-sage);">${done}</strong></td>
+                <td style="text-align:center;">${archCats > 0 ? `<span style="background:#fff3e0; color:#e65100; padding:2px 8px; border-radius:8px; font-size:0.75rem; font-weight:700;">📦 ${archCats}</span>` : '—'}</td>
+            </tr>`;
+        }).join('') || '<tr><td colspan="7" style="text-align:center; color:#ccc; padding:2rem;">Nicio ședință în perioada selectată</td></tr>';
+
+        document.getElementById('sessionCount').textContent = `${filtered.length} ședințe afișate`;
+    }
+
+    // ════════════════════════════════════════
+    // SUMAR LUNAR
+    // ════════════════════════════════════════
+    function renderMonthGrid() {
+        const byMonth = {};
+        allSessions.forEach(s => {
+            const m = (s.date||'').substring(0,7);
+            if (!m) return;
+            if (!byMonth[m]) byMonth[m] = { sedinte: 0, obj: 0, done: 0, patients: new Set() };
+            byMonth[m].sedinte++;
+            byMonth[m].obj += (s.categories||[]).reduce((a,c)=>a+(c.subItems||[]).length,0);
+            byMonth[m].done += (s.categories||[]).reduce((a,c)=>a+(c.subItems||[]).filter(i=>i.completed).length,0);
+            byMonth[m].patients.add(s.patientName);
+        });
+
+        const months = Object.keys(byMonth).sort().reverse().slice(0, 12);
+        const grid = document.getElementById('monthGrid');
+        if (!months.length) { grid.innerHTML = '<p style="color:#ccc; text-align:center; padding:2rem;">Nicio ședință înregistrată încă.</p>'; return; }
+
+        grid.innerHTML = months.map(m => {
+            const [yr, mo] = m.split('-');
+            const label = MONTHS_RO[parseInt(mo)-1] + ' ' + yr;
+            const d = byMonth[m];
+            const hasReport = Object.values(allReports).some(rList => rList.some(r => r.month === m));
+            return `<div class="month-card">
+                <h4>${label} ${hasReport ? '<span style="font-size:0.7rem; background:#e8f5e9; color:#2e7d32; padding:2px 6px; border-radius:6px; margin-left:4px;">📝 raport</span>' : ''}</h4>
+                <p>📋 <strong>${d.sedinte}</strong> ședințe</p>
+                <p>👥 <strong>${d.patients.size}</strong> participanți</p>
+                <p>✅ <strong>${d.done}</strong>/<strong>${d.obj}</strong> obiective finalizate</p>
+            </div>`;
+        }).join('');
+    }
+
+    // ════════════════════════════════════════
+    // ARHIVĂ SUMAR
+    // ════════════════════════════════════════
+    async function renderArchiveSummary() {
+        const { data: archived } = await _supabase.from('archived_patients').select('id, name, age, archived_at').order('archived_at', { ascending: false }).limit(5);
+        const el = document.getElementById('archiveSummary');
+        if (!archived || !archived.length) {
+            el.innerHTML = '<p style="color:#ccc; font-size:0.9rem;">Niciun profil arhivat.</p>';
+            return;
+        }
+        el.innerHTML = `<p style="margin:0 0 12px; color:#999; font-size:0.85rem;">Ultimele profiluri arhivate:</p>` +
+            archived.map(a => `
+                <div style="display:flex; align-items:center; gap:12px; padding:10px 14px; background:#fdfaf3; border-radius:12px; margin-bottom:8px;">
+                    <span style="font-size:1.2rem;">👤</span>
+                    <div style="flex:1;">
+                        <strong style="font-size:0.9rem;">${a.name || '—'}</strong>
+                        <span style="font-size:0.78rem; color:#999; margin-left:8px;">${a.age || '—'} ani</span>
+                    </div>
+                    <span style="font-size:0.78rem; color:#c79e7f;">Arhivat: ${new Date(a.archived_at).toLocaleDateString('ro-RO')}</span>
+                </div>
+            `).join('') +
+            `<a href="arhiva.html" style="display:inline-block; margin-top:10px; font-size:0.85rem; color:var(--verde-sage); font-weight:700; text-decoration:none;">→ Deschide arhiva completă (${archivedCount})</a>`;
+    }
+
+    // ════════════════════════════════════════
+    // EXPORT PDF COMPLET
+    // ════════════════════════════════════════
+    function exportFullPDF() {
+        showToast('Se generează PDF-ul de evidență...', '⏳');
+        setTimeout(() => {
+            const opt = {
+                margin: [10,10,10,10],
+                filename: `Evidenta_Cabinet_${new Date().toLocaleDateString('ro-RO').replace(/\./g,'-')}.pdf`,
+                image: { type: 'jpeg', quality: 0.95 },
+                html2canvas: { scale: 1.5 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+            const el = document.querySelector('.main');
+            html2pdf().set(opt).from(el).save();
+        }, 300);
+    }
+
+    // ════════════════════════════════════════
+    // TOAST
+    // ════════════════════════════════════════
+    function showToast(msg, icon='✅') {
+        const t = document.getElementById('customToast');
+        t.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    init();
+</script>
+</body>
+</html>

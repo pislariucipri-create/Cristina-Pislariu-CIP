@@ -131,6 +131,20 @@
         .btn-rename-cat { background: none; border: none; color: var(--maro-lemn); cursor: pointer; font-size: 1rem; padding: 4px; }
         .btn-del-cat { background: none; border: none; color: #ffab91; cursor: pointer; font-size: 1rem; padding: 4px; transition: 0.2s; }
         .btn-del-cat:hover { color: #d32f2f; }
+        .btn-archive-cat { background: none; border: none; color: #c79e7f; cursor: pointer; font-size: 1rem; padding: 4px; transition: 0.2s; }
+        .btn-archive-cat:hover { color: #8d6e63; }
+        /* Categorii arhivate */
+        .archived-section { margin-top: 30px; border-top: 2px dashed #e8e0d8; padding-top: 20px; }
+        .archived-section-title { font-size: 0.85rem; font-weight: 700; color: #c79e7f; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .archived-category-block { background: #fdfaf3; border-radius: 14px; margin-bottom: 10px; border-left: 4px solid #c79e7f; opacity: 0.85; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+        .archived-cat-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; cursor: pointer; }
+        .archived-cat-title { font-weight: 700; font-size: 0.95rem; color: #8d6e63; }
+        .archived-cat-date { font-size: 0.75rem; color: #bbb; margin-left: 8px; }
+        .archived-badge { background: #fff3e0; color: #e65100; font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
+        .btn-restore-cat { background: none; border: 1px solid var(--verde-sage); color: var(--verde-sage); font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .btn-restore-cat:hover { background: var(--verde-sage); color: white; }
+        .btn-del-arch { background: none; border: none; color: #ffcdd2; cursor: pointer; font-size: 0.9rem; padding: 3px; transition: 0.2s; }
+        .btn-del-arch:hover { color: #d32f2f; }
 
         .cat-body { display: none; border-top: 1px solid #f5f0ea; }
         .cat-body.open { display: block; }
@@ -415,6 +429,8 @@
 
             <!-- Categorii -->
             <div id="categoriesContainer"></div>
+            <!-- Categorii arhivate -->
+            <div id="archivedContainer">${renderArchivedCategories(s)}</div>
         `;
 
         renderCategories(s);
@@ -453,6 +469,7 @@
                     </div>
                     <div class="cat-header-right">
                         <button class="btn-rename-cat" onclick="renameCategory('${cat.id}', event)" title="Redenumește">✎</button>
+                        <button class="btn-archive-cat" onclick="archiveCategory('${cat.id}', event)" title="Arhivează categoria (finalizată)">📦</button>
                         <button class="btn-del-cat" onclick="deleteCategory('${cat.id}', event)" title="Șterge categorie">🗑</button>
                         <span class="cat-chevron" id="chev-${cat.id}">▶</span>
                     </div>
@@ -556,10 +573,86 @@
 
     function deleteCategory(catId, e) {
         e.stopPropagation();
-        if (!confirm("Ștergi această categorie și toate obiectivele ei?")) return;
+        if (!confirm("Ștergi această categorie și toate obiectivele ei?\n\nDacă categoria este finalizată cu copilul, folosește 📦 Arhivează în loc.")) return;
         const s = sessions.find(x => x.id === currentSessionId);
         s.categories = (s.categories || []).filter(c => c.id !== catId);
         renderMain();
+    }
+
+    // ── ARHIVARE CATEGORIE ────────────────────────────────────────
+    function archiveCategory(catId, e) {
+        e.stopPropagation();
+        const s = sessions.find(x => x.id === currentSessionId);
+        const cat = (s.categories || []).find(c => c.id === catId);
+        if (!cat) return;
+        const total = (cat.subItems || []).length;
+        const done = (cat.subItems || []).filter(i => i.completed).length;
+        if (!confirm(`Arhivezi categoria "${cat.catName}"?\n\n${done}/${total} obiective finalizate.\n\nCategoria va fi mutată în secțiunea "Arhivă categorii" și poate fi restaurată oricând.`)) return;
+        if (!s.archivedCategories) s.archivedCategories = [];
+        s.archivedCategories.push({ ...cat, archivedAt: new Date().toISOString() });
+        s.categories = (s.categories || []).filter(c => c.id !== catId);
+        renderMain();
+        saveData();
+        showToast(`Categoria "${cat.catName}" arhivată și salvată! 📦`);
+    }
+
+    function restoreArchivedCategory(catId) {
+        const s = sessions.find(x => x.id === currentSessionId);
+        const cat = (s.archivedCategories || []).find(c => c.id === catId);
+        if (!cat) return;
+        if (!confirm(`Restaurezi categoria "${cat.catName}" înapoi în lista activă?`)) return;
+        const { archivedAt, ...catData } = cat;
+        if (!s.categories) s.categories = [];
+        s.categories.push({ ...catData, id: uid() });
+        s.archivedCategories = (s.archivedCategories || []).filter(c => c.id !== catId);
+        renderMain();
+        saveData();
+        showToast(`Categoria "${cat.catName}" restaurată! ✅`);
+    }
+
+    function deleteArchivedCategory(catId) {
+        const s = sessions.find(x => x.id === currentSessionId);
+        const cat = (s.archivedCategories || []).find(c => c.id === catId);
+        if (!cat) return;
+        if (!confirm(`Ștergi definitiv categoria arhivată "${cat.catName}"?`)) return;
+        s.archivedCategories = (s.archivedCategories || []).filter(c => c.id !== catId);
+        renderMain();
+    }
+
+    function renderArchivedCategories(s) {
+        const archived = s.archivedCategories || [];
+        if (archived.length === 0) return '';
+        const items = archived.map(cat => {
+            const total = (cat.subItems || []).length;
+            const done = (cat.subItems || []).filter(i => i.completed).length;
+            const archDate = cat.archivedAt ? new Date(cat.archivedAt).toLocaleDateString('ro-RO', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+            const objList = (cat.subItems || []).map(item =>
+                `<div style="font-size:0.82rem; padding:4px 8px; color:#666; display:flex; align-items:center; gap:6px;">
+                    ${item.completed ? '✅' : '⬜'} ${item.name || ''}
+                    ${item.scores ? `<span style="font-size:0.7rem; color:#aaa;">${item.scores}</span>` : ''}
+                </div>`
+            ).join('');
+            return `
+                <div class="archived-category-block">
+                    <div class="archived-cat-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+                        <div style="display:flex;align-items:center;flex:1;gap:6px;flex-wrap:wrap;">
+                            <span class="archived-cat-title">📦 ${cat.catName || 'Categorie'}</span>
+                            <span class="archived-cat-date">arhivat ${archDate}</span>
+                            <span class="archived-badge">${done}/${total} finalizate</span>
+                        </div>
+                        <div style="display:flex;gap:6px;align-items:center;">
+                            <button class="btn-restore-cat" onclick="event.stopPropagation(); restoreArchivedCategory('${cat.id}')">↩ Restaurează</button>
+                            <button class="btn-del-arch" onclick="event.stopPropagation(); deleteArchivedCategory('${cat.id}')" title="Șterge definitiv">🗑</button>
+                        </div>
+                    </div>
+                    <div style="display:none; padding: 8px 16px 12px;">${objList}</div>
+                </div>`;
+        }).join('');
+        return `
+            <div class="archived-section">
+                <div class="archived-section-title">📦 Categorii arhivate (${archived.length})</div>
+                ${items}
+            </div>`;
     }
 
     // ── OBIECTIVE CRUD ────────────────────────────────────────────
