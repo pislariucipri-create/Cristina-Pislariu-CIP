@@ -59,6 +59,17 @@
         .session-item:hover .btn-del-session { opacity: 1; }
         .btn-del-session:hover { color: #d32f2f; }
 
+        /* ── DRAG & DROP ── */
+        .drag-handle {
+            position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+            color: #ccc; cursor: grab; font-size: 1rem; padding: 4px;
+            opacity: 0; transition: 0.2s; line-height: 1; user-select: none;
+        }
+        .session-item:hover .drag-handle { opacity: 1; }
+        .session-item { padding-left: 30px; }
+        .session-item.dragging { opacity: 0.4; background: #e8f5e9 !important; }
+        .session-item.drag-over { border-color: var(--verde-sage) !important; background: #f0fdf4 !important; }
+
         /* ── MAIN CONTENT ── */
         .main-content { padding: 30px 35px; overflow-y: auto; }
 
@@ -330,16 +341,67 @@
             const div = document.createElement('div');
             div.className = 'session-item' + (s.id === currentSessionId ? ' active' : '');
             div.id = 'sitem-' + s.id;
+            div.dataset.sessionId = s.id;
+            div.draggable = true;
             div.onclick = () => selectSession(s.id);
             div.innerHTML = `
+                <span class="drag-handle" title="Trage pentru a reordona">⠿</span>
                 <button class="btn-del-session" onclick="deleteSession('${s.id}', event)" title="Șterge ședința">🗑</button>
                 <div class="session-nr">Ședința ${idx + 1}</div>
                 <div class="session-date">📅 ${d}</div>
                 ${s.obs ? `<div class="session-obs-preview">${s.obs}</div>` : ''}
                 <div class="session-score-pill">${completedObj}/${totalObj} obiective</div>
             `;
+            // Drag events
+            div.addEventListener('dragstart', onDragStart);
+            div.addEventListener('dragover',  onDragOver);
+            div.addEventListener('dragleave', onDragLeave);
+            div.addEventListener('drop',      onDrop);
+            div.addEventListener('dragend',   onDragEnd);
             list.appendChild(div);
         });
+    }
+
+    // ── DRAG & DROP LOGIC ─────────────────────────────────────────
+    let dragSrcId = null;
+
+    function onDragStart(e) {
+        dragSrcId = this.dataset.sessionId;
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    }
+    function onDragOver(e) {
+        e.preventDefault();
+        if (this.dataset.sessionId !== dragSrcId) {
+            this.classList.add('drag-over');
+        }
+        e.dataTransfer.dropEffect = 'move';
+    }
+    function onDragLeave() { this.classList.remove('drag-over'); }
+    function onDrop(e) {
+        e.preventDefault();
+        this.classList.remove('drag-over');
+        const targetId = this.dataset.sessionId;
+        if (!dragSrcId || dragSrcId === targetId) return;
+
+        // The sidebar shows sessions reversed (newest first),
+        // so we swap in the original sessions array
+        const srcIdx = sessions.findIndex(s => s.id === dragSrcId);
+        const tgtIdx = sessions.findIndex(s => s.id === targetId);
+        if (srcIdx === -1 || tgtIdx === -1) return;
+
+        // Move srcIdx to tgtIdx position
+        const [moved] = sessions.splice(srcIdx, 1);
+        sessions.splice(tgtIdx, 0, moved);
+
+        renderSidebar();
+        showToast("Ședința a fost mutată! Salvează pentru a păstra ordinea. 🔄", "📋");
+    }
+    function onDragEnd() {
+        document.querySelectorAll('.session-item').forEach(el => {
+            el.classList.remove('dragging', 'drag-over');
+        });
+        dragSrcId = null;
     }
 
     // ── SELECTARE SEDINTA ─────────────────────────────────────────
@@ -734,10 +796,72 @@
         if (result.error) {
             showToast("Eroare la salvare: " + result.error.message, "❌");
         } else {
+            // ── Trimite snapshot complet în rapoarte ──────────────
+            await syncToReports();
+
             const ind = document.getElementById('saveIndicator');
             ind.style.display = 'inline';
             setTimeout(() => ind.style.display = 'none', 2500);
-            showToast("Ședința a fost salvată! ✓");
+            showToast("Ședința a fost salvată și raportul actualizat! ✓");
+        }
+    }
+
+    // ── SYNC RAPORT ───────────────────────────────────────────────
+    async function syncToReports() {
+        try {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('ro-RO', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+            // Construim conținutul HTML al fișei complete
+            let content = `=== FIȘĂ COMPLETĂ — salvată la ${dateStr} ===\n\n`;
+
+            sessions.forEach((s, idx) => {
+                const d = s.date ? new Date(s.date).toLocaleDateString('ro-RO', { day: '2-digit', month: 'long', year: 'numeric' }) : '—';
+                const totalObj = (s.categories || []).reduce((acc, c) => acc + (c.subItems || []).length, 0);
+                const completedObj = (s.categories || []).reduce((acc, c) => acc + (c.subItems || []).filter(i => i.completed).length, 0);
+
+                content += `──────────────────────────────────────\n`;
+                content += `ȘEDINȚA ${idx + 1} — ${d}\n`;
+                if (s.obs) content += `Observații: ${s.obs}\n`;
+                content += `Progres: ${completedObj}/${totalObj} obiective finalizate\n\n`;
+
+                (s.categories || []).forEach(cat => {
+                    const done = (cat.subItems || []).filter(i => i.completed).length;
+                    content += `  📂 ${cat.catName} (${done}/${(cat.subItems||[]).length})\n`;
+                    (cat.subItems || []).forEach(item => {
+                        const status = item.completed ? '✅' : '⬜';
+                        content += `    ${status} ${item.name}`;
+                        if (item.scores) content += ` [${item.scores}]`;
+                        if (item.locatie) content += ` | Loc: ${item.locatie}`;
+                        if (item.persoana) content += ` | Pers: ${item.persoana}`;
+                        if (item.detalii_extra) content += ` | ${item.detalii_extra}`;
+                        content += '\n';
+                    });
+                });
+
+                if ((s.archivedCategories || []).length > 0) {
+                    content += `  📦 Categorii arhivate: ${s.archivedCategories.map(c => c.catName).join(', ')}\n`;
+                }
+                content += '\n';
+            });
+
+            // Upsert în reports (un singur raport per pacient, mereu actualizat)
+            const { data: existing } = await _supabase
+                .from('reports')
+                .select('id')
+                .eq('patient_id', patientId)
+                .maybeSingle();
+
+            if (existing) {
+                await _supabase.from('reports')
+                    .update({ content, updated_at: now.toISOString() })
+                    .eq('id', existing.id);
+            } else {
+                await _supabase.from('reports')
+                    .insert([{ patient_id: patientId, content }]);
+            }
+        } catch(err) {
+            console.warn('Eroare sincronizare raport:', err);
         }
     }
 
