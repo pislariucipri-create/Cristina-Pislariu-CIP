@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Părinte | Cristina Pîslariu</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="components/navigation.js"></script>
+    <style>
+        body { background: var(--crem-fundal); }
+        .portal-container { max-width: 1200px; margin: 0 auto; padding: 2rem 5%; }
+        
+        .welcome-banner {
+            background: linear-gradient(135deg, var(--verde-sage) 0%, #6a8c5f 100%);
+            border-radius: 20px;
+            padding: 2.5rem;
+            color: white;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(129,164,115,0.3);
+        }
+        .welcome-banner h1 { font-family: var(--font-serif); font-size: 2.2rem; margin: 0 0 0.5rem; }
+        .welcome-banner p { margin: 0; opacity: 0.9; font-size: 1.1rem; }
+        
+        .child-selector {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .child-selector h3 { font-family: var(--font-serif); color: var(--text-maro-inchis); margin: 0 0 1rem; }
+        .child-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+        .child-card {
+            border: 2px solid #e8e0d8;
+            border-radius: 12px;
+            padding: 1.2rem;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .child-card:hover { border-color: var(--verde-sage); background: #f8f5f0; }
+        .child-card.active { border-color: var(--verde-sage); background: #eef5eb; }
+        .child-avatar { width: 50px; height: 50px; border-radius: 50%; background: #f0ede8; border: 2px solid var(--verde-sage); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .child-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .child-info h4 { margin: 0; color: var(--text-maro-inchis); font-size: 1rem; }
+        .child-info p { margin: 0.2rem 0 0; color: #666; font-size: 0.85rem; }
+        
+        .progress-section { background: white; border-radius: 20px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .progress-section h3 { font-family: var(--font-serif); color: var(--text-maro-inchis); margin: 0 0 1.5rem; font-size: 1.5rem; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card {
+            background: #f8f5f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            border-top: 4px solid var(--verde-sage);
+        }
+        .stat-card .number { font-family: var(--font-serif); font-size: 2.5rem; color: var(--text-maro-inchis); font-weight: 700; }
+        .stat-card .label { font-size: 0.85rem; color: #666; margin-top: 0.5rem; }
+        
+        .timeline { position: relative; padding-left: 2rem; }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: #e8e0d8;
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -2.4rem;
+            top: 0.5rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--verde-sage);
+            border: 3px solid white;
+            box-shadow: 0 0 0 3px var(--verde-sage);
+        }
+        .timeline-date { font-size: 0.85rem; color: var(--verde-sage); font-weight: 700; margin-bottom: 0.3rem; }
+        .timeline-content { background: #f8f5f0; border-radius: 12px; padding: 1rem; }
+        .timeline-content h4 { margin: 0 0 0.5rem; color: var(--text-maro-inchis); }
+        .timeline-content p { margin: 0; color: #666; font-size: 0.9rem; line-height: 1.6; }
+        
+        .documents-section { background: white; border-radius: 20px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .documents-section h3 { font-family: var(--font-serif); color: var(--text-maro-inchis); margin: 0 0 1.5rem; font-size: 1.5rem; }
+        .doc-list { display: flex; flex-direction: column; gap: 0.8rem; }
+        .doc-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8f5f0;
+            border-radius: 10px;
+            transition: 0.2s;
+        }
+        .doc-item:hover { background: #ede8e2; }
+        .doc-icon { font-size: 1.5rem; }
+        .doc-info { flex: 1; }
+        .doc-info h4 { margin: 0; color: var(--text-maro-inchis); font-size: 1rem; }
+        .doc-info p { margin: 0.2rem 0 0; color: #666; font-size: 0.85rem; }
+        .doc-btn {
+            background: var(--verde-sage);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .doc-btn:hover { background: var(--verde-sage-inchis); }
+        
+        .empty-state { text-align: center; padding: 3rem; color: #999; }
+        .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+        
+        @media (max-width: 768px) {
+            .portal-container { padding: 1rem; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .welcome-banner { padding: 1.5rem; }
+            .welcome-banner h1 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="portal-container">
+    <!-- Welcome Banner -->
+    <div class="welcome-banner">
+        <h1>👋 Bun venit, <span id="parentName">Părinte</span>!</h1>
+        <p>Aici poți vedea progresul copilului tău și documentele importante.</p>
+    </div>
+    
+    <!-- Child Selector -->
+    <div class="child-selector" id="childSelector">
+        <h3>👶 Selectează copilul</h3>
+        <div class="child-cards" id="childCards">
+            <div class="empty-state">
+                <span class="icon">⏳</span>
+                <p>Se încarcă...</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Progress Section (hidden until child selected) -->
+    <div class="progress-section" id="progressSection" style="display:none;">
+        <h3 id="childNameTitle">📈 Progres</h3>
+        
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="number" id="totalSessions">0</div>
+                <div class="label">Total Ședințe</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="totalObjectives">0</div>
+                <div class="label">Obiective Lucrate</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="completedObjectives">0</div>
+                <div class="label">Obiective Finalizate</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="successRate">0%</div>
+                <div class="label">Rată Succes</div>
+            </div>
+        </div>
+        
+        <!-- Timeline -->
+        <h4 style="font-family: var(--font-serif); color: var(--text-maro-inchis); margin: 2rem 0 1rem;">📅 Activitate Recentă</h4>
+        <div class="timeline" id="activityTimeline">
+            <div class="empty-state">
+                <span class="icon">📋</span>
+                <p>Nicio activitate înregistrată încă.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Documents Section -->
+    <div class="documents-section" id="documentsSection" style="display:none;">
+        <h3>📄 Documente Disponibile</h3>
+        <div class="doc-list" id="docList">
+            <div class="empty-state">
+                <span class="icon">📂</span>
+                <p>Niciun document disponibil încă.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://yexvpbgkrzerkizscgfn.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_q52fh6Xa3yNm3q0akTrKKw_7AlxLrCU';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // Check authentication
+    const session = getSession();
+    if (!session || session.role !== 'parinte') {
+        window.location.href = 'index.html';
+    }
+    
+    let selectedChildId = null;
+    let childrenData = [];
+    
+    // Load children associated with parent
+    async function loadChildren() {
+        const parentEmail = session.email;
+        const { data: patients, error } = await _supabase
+            .from('patients')
+            .select('*')
+            .eq('email', parentEmail);
+        
+        if (error) {
+            document.getElementById('childCards').innerHTML = `
+                <div class="empty-state">
+                    <span class="icon">⚠️</span>
+                    <p>Eroare la încărcare: ${error.message}</p>
+                </div>`;
+            return;
+        }
+        
+        childrenData = patients || [];
+        
+        if (childrenData.length === 0) {
+            document.getElementById('childCards').innerHTML = `
+                <div class="empty-state">
+                    <span class="icon">👶</span>
+                    <p>Niciun copil asociat acestui cont.</p>
+                </div>`;
+            return;
+        }
+        
+        renderChildCards();
+    }
+    
+    function renderChildCards() {
+        const container = document.getElementById('childCards');
+        container.innerHTML = childrenData.map(child => `
+            <div class="child-card ${selectedChildId === child.id ? 'active' : ''}" onclick="selectChild('${child.id}')">
+                <div class="child-avatar">${child.photo ? `<img src="${child.photo}">` : '👤'}</div>
+                <div class="child-info">
+                    <h4>${child.name || 'Fără nume'}</h4>
+                    <p>${child.age ? child.age + ' ani' : ''}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    async function selectChild(childId) {
+        selectedChildId = childId;
+        renderChildCards();
+        
+        const child = childrenData.find(c => c.id === childId);
+        document.getElementById('childNameTitle').textContent = `📈 Progres - ${child.name}`;
+        
+        // Show sections
+        document.getElementById('progressSection').style.display = 'block';
+        document.getElementById('documentsSection').style.display = 'block';
+        
+        // Load progress data
+        await loadProgressData(childId);
+        await loadDocuments(childId);
+    }
+    
+    async function loadProgressData(childId) {
+        // Load fisa data
+        const { data: fisa } = await _supabase
+            .from('fisa_data')
+            .select('data')
+            .eq('patient_id', childId)
+            .maybeSingle();
+        
+        const sessions = fisa?.data || [];
+        
+        // Calculate stats
+        const totalSessions = sessions.length;
+        const totalObj = sessions.reduce((a, s) => a + (s.categories||[]).reduce((b,c) => b + (c.subItems||[]).length, 0), 0);
+        const completedObj = sessions.reduce((a, s) => a + (s.categories||[]).reduce((b,c) => b + (c.subItems||[]).filter(i=>i.completed).length, 0), 0);
+        const successRate = totalObj > 0 ? Math.round((completedObj / totalObj) * 100) : 0;
+        
+        document.getElementById('totalSessions').textContent = totalSessions;
+        document.getElementById('totalObjectives').textContent = totalObj;
+        document.getElementById('completedObjectives').textContent = completedObj;
+        document.getElementById('successRate').textContent = successRate + '%';
+        
+        // Build timeline
+        const timeline = document.getElementById('activityTimeline');
+        if (sessions.length === 0) {
+            timeline.innerHTML = `
+                <div class="empty-state">
+                    <span class="icon">📋</span>
+                    <p>Nicio ședință înregistrată încă.</p>
+                </div>`;
+            return;
+        }
+        
+        // Sort by date descending
+        const sortedSessions = [...sessions].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        
+        timeline.innerHTML = sortedSessions.slice(0, 10).map(session => {
+            const date = session.date ? new Date(session.date).toLocaleDateString('ro-RO', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Data necunoscută';
+            const objCount = (session.categories||[]).reduce((a,c) => a + (c.subItems||[]).length, 0);
+            const completedCount = (session.categories||[]).reduce((a,c) => a + (c.subItems||[]).filter(i=>i.completed).length, 0);
+            
+            return `
+                <div class="timeline-item">
+                    <div class="timeline-date">${date}</div>
+                    <div class="timeline-content">
+                        <h4>Ședință de terapie</h4>
+                        <p>${session.obs || 'Fără observații'}</p>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem;">
+                            <strong>Obiective:</strong> ${completedCount}/${objCount} finalizate
+                        </p>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    async function loadDocuments(childId) {
+        const docList = document.getElementById('docList');
+        
+        // Load monthly reports
+        const { data: reports } = await _supabase
+            .from('monthly_reports')
+            .select('*')
+            .eq('patient_id', childId)
+            .order('month', { ascending: false });
+        
+        // Load intervention plan
+        const { data: plan } = await _supabase
+            .from('intervention_plans')
+            .select('*')
+            .eq('patient_id', childId)
+            .maybeSingle();
+        
+        const docs = [];
+        
+        // Add reports
+        (reports || []).forEach(report => {
+            const [yr, mo] = report.month.split('-');
+            const monthName = ['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'][parseInt(mo)-1];
+            docs.push({
+                icon: '📊',
+                title: `Raport Lunar - ${monthName} ${yr}`,
+                date: report.month,
+                type: 'report',
+                id: report.id
+            });
+        });
+        
+        // Add plan
+        if (plan) {
+            docs.push({
+                icon: '📋',
+                title: 'Plan de Intervenție',
+                date: plan.updated_at || 'Necunoscut',
+                type: 'plan',
+                id: plan.id
+            });
+        }
+        
+        if (docs.length === 0) {
+            docList.innerHTML = `
+                <div class="empty-state">
+                    <span class="icon">📂</span>
+                    <p>Niciun document disponibil încă.</p>
+                </div>`;
+            return;
+        }
+        
+        docList.innerHTML = docs.map(doc => `
+            <div class="doc-item">
+                <div class="doc-icon">${doc.icon}</div>
+                <div class="doc-info">
+                    <h4>${doc.title}</h4>
+                    <p>${doc.date}</p>
+                </div>
+                <button class="doc-btn" onclick="viewDocument('${doc.type}', '${doc.id}')">Vezi</button>
+            </div>
+        `).join('');
+    }
+    
+    function viewDocument(type, id) {
+        if (type === 'report') {
+            // For now, just show a toast
+            showToast('Funcționalitatea de vizualizare raport va fi disponibilă curând.', '📄');
+        } else if (type === 'plan') {
+            showToast('Funcționalitatea de vizualizare plan va fi disponibilă curând.', '📋');
+        }
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('parentName').textContent = session.email.split('@')[0];
+        loadChildren();
+    });
+</script>
+</body>
+</html>

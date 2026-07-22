@@ -267,7 +267,7 @@
                     const [y, mo2] = m.split('-');
                     const label = MONTHS_RO[parseInt(mo2)-1].substring(0,3) + ' ' + y;
                     const hasReport = monthlyReports.some(r => r.month === m);
-                    return `<button class="month-tab ${m === activeMonth ? 'active' : ''} ${hasReport ? 'has-data' : ''}" onclick="setActiveMonth('${m}')">${label}</button>`;
+                    return `<button class="month-tab ${m === activeMonth ? 'active' : ''} ${hasReport ? 'has-data' : ''}" onclick="openDetailedReport('${m}')">${label}</button>`;
                 }).join('')}
             </div>
 
@@ -363,7 +363,7 @@
                         const [ry, rmo] = r.month.split('-');
                         const rLabel = MONTHS_RO[parseInt(rmo)-1] + ' ' + ry;
                         return `
-                        <div class="history-item" onclick="setActiveMonth('${r.month}')">
+                        <div class="history-item" onclick="openDetailedReport('${r.month}')">
                             <span class="history-month-badge">${rLabel}</span>
                             <div class="history-item-info">
                                 <strong>${r.sedinte || 0} ședințe · ${r.stare || 'Fără evaluare stare'}</strong>
@@ -382,6 +382,10 @@
         activeMonth = m;
         renderMain();
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function openDetailedReport(m) {
+        window.location.href = `raport-lunar-detalii.html?patientId=${currentPatientId}&month=${m}`;
     }
 
     // ════════════════════════════════════════

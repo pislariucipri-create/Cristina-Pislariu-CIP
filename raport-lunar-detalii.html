@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raport Lunar Detaliat | Cristina Pîslariu</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body { background: var(--crem-fundal); }
+        header { background: var(--alb-curat); padding: 0.9rem 5%; box-shadow: 0 2px 10px rgba(0,0,0,0.06); position: sticky; top: 0; z-index: 500; }
+        .nav-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+        .btn-back { text-decoration: none; color: var(--text-maro-inchis); font-weight: 700; display: flex; align-items: center; gap: 5px; transition: 0.2s; }
+        .btn-back:hover { color: var(--verde-sage); }
+
+        .main { max-width: 1000px; margin: 0 auto; padding: 2.5rem 5%; }
+
+        /* REPORT CONTAINER */
+        .report-container { background: white; border-radius: 20px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom: 30px; }
+
+        /* REPORT HEADER */
+        .report-header { text-align: center; margin-bottom: 40px; border-bottom: 3px solid var(--verde-sage); padding-bottom: 25px; }
+        .report-header h1 { font-family: var(--font-serif); font-size: 2rem; color: var(--text-maro-inchis); margin: 0 0 10px; }
+        .report-header .subtitle { font-size: 1.1rem; color: #666; margin: 5px 0; }
+        .report-header .meta { font-size: 0.9rem; color: #999; margin-top: 10px; }
+
+        /* PATIENT INFO */
+        .patient-info { display: flex; align-items: center; gap: 20px; background: #f8f5f0; border-radius: 15px; padding: 20px; margin-bottom: 30px; }
+        .patient-avatar { width: 80px; height: 80px; border-radius: 50%; background: #f0ede8; border: 3px solid var(--verde-sage); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0; }
+        .patient-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .patient-details h2 { font-family: var(--font-serif); font-size: 1.5rem; color: var(--text-maro-inchis); margin: 0 0 5px; }
+        .patient-details p { color: #666; margin: 3px 0; font-size: 0.95rem; }
+
+        /* STATS SECTION */
+        .stats-section { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
+        .stat-box { background: #eef5eb; border-radius: 12px; padding: 15px; text-align: center; border-top: 3px solid var(--verde-sage); }
+        .stat-box .number { font-family: var(--font-serif); font-size: 2rem; color: var(--text-maro-inchis); font-weight: 700; }
+        .stat-box .label { font-size: 0.8rem; color: #666; margin-top: 5px; font-weight: 600; }
+
+        /* SECTIONS */
+        .report-section { margin-bottom: 30px; }
+        .report-section h3 { font-family: var(--font-serif); font-size: 1.3rem; color: var(--text-maro-inchis); margin: 0 0 15px; border-bottom: 2px solid #f0ebe3; padding-bottom: 10px; }
+        .report-section p { line-height: 1.8; color: #444; margin: 10px 0; }
+        .report-section .empty { color: #999; font-style: italic; }
+
+        /* SESSIONS TABLE */
+        .sessions-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .sessions-table th { background: #f8f5f0; color: var(--text-maro-inchis); padding: 12px 15px; font-size: 0.85rem; font-weight: 700; text-align: left; border-bottom: 2px solid #e8e0d8; }
+        .sessions-table td { padding: 12px 15px; border-bottom: 1px solid #f5f0ea; font-size: 0.9rem; vertical-align: top; }
+        .sessions-table tr:last-child td { border-bottom: none; }
+        .sessions-table tr:hover td { background: #fdfaf3; }
+        .session-date { font-weight: 700; color: var(--text-maro-inchis); white-space: nowrap; }
+        .session-obs { max-width: 300px; }
+        .session-stats { text-align: center; }
+
+        /* ACTION BUTTONS */
+        .actions-bar { display: flex; gap: 10px; justify-content: center; margin-top: 30px; flex-wrap: wrap; }
+        .btn-main { background-color: var(--verde-sage); color: white; padding: 0.8rem 2rem; border: none; border-radius: 25px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; transition: 0.2s; font-size: 0.95rem; }
+        .btn-main:hover { background-color: var(--verde-sage-inchis); }
+        .btn-sec { background: white; color: var(--text-maro-inchis); padding: 0.8rem 2rem; border: 2px solid #e8e0d8; border-radius: 25px; font-weight: 700; font-family: var(--font-sans); cursor: pointer; transition: 0.2s; font-size: 0.95rem; }
+        .btn-sec:hover { border-color: var(--verde-sage); color: var(--verde-sage); }
+
+        /* SIGNATURE SECTION */
+        .signature-section { margin-top: 50px; display: flex; justify-content: space-between; gap: 40px; }
+        .signature-box { flex: 1; text-align: center; }
+        .signature-box p { margin: 5px 0; }
+        .signature-box .line { border-top: 1px solid #333; margin-top: 30px; padding-top: 10px; }
+        .signature-box .date-line { border-top: 1px dashed #999; margin-top: 20px; padding-top: 10px; font-size: 0.9rem; color: #666; }
+
+        /* FOOTER */
+        .report-footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 0.75rem; color: #999; }
+
+        /* PRINT STYLES */
+        @media print {
+            header, .actions-bar { display: none !important; }
+            body { background: white; }
+            .main { padding: 0; max-width: 100%; }
+            .report-container { box-shadow: none; border: 1px solid #ddd; padding: 30px; }
+            .signature-section { page-break-inside: avoid; }
+        }
+
+        @media (max-width: 768px) {
+            .stats-section { grid-template-columns: 1fr 1fr; }
+            .signature-section { flex-direction: column; }
+            .main { padding: 1.5rem 4%; }
+            .report-container { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <nav class="nav-bar">
+        <a href="rapoarte-lunare.html" class="btn-back">← Înapoi la Rapoarte Lunare</a>
+        <h3 style="font-family: var(--font-serif); color: var(--verde-sage-inchis); font-size: 1.2rem;">📄 Raport Detaliat</h3>
+        <div style="display:flex; gap:8px;">
+            <button class="btn-sec" onclick="window.print()" style="padding:0.5rem 1.2rem; font-size:0.85rem;">🖨️ Tipărește</button>
+            <button class="btn-main" onclick="exportPDF()" style="padding:0.5rem 1.2rem; font-size:0.85rem;">📥 Export PDF</button>
+        </div>
+    </nav>
+</header>
+
+<main class="main">
+    <!-- LOADING -->
+    <div id="loadingOverlay" style="text-align:center; padding:5rem; color:#ccc; font-size:1.1rem;">⏳ Se încarcă raportul...</div>
+
+    <!-- REPORT CONTENT -->
+    <div id="reportContent" style="display:none;">
+        <div class="report-container" id="printableArea">
+            <!-- Header -->
+            <div class="report-header">
+                <h1>RAPORT LUNAR DE PROGRES</h1>
+                <p class="subtitle" id="monthTitle"></p>
+                <p class="meta">Cristina Pîslariu — Cabinet Individual de Psihologie · CIF: 54275086</p>
+            </div>
+
+            <!-- Patient Info -->
+            <div class="patient-info" id="patientInfo"></div>
+
+            <!-- Stats -->
+            <div class="stats-section" id="statsSection"></div>
+
+            <!-- Monthly Report Data -->
+            <div class="report-section">
+                <h3>📊 Date Raport Lunar</h3>
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr>
+                        <td style="padding:10px; border:1px solid #eee; background:#f8f5f0; font-weight:700;">Număr ședințe desfășurate</td>
+                        <td style="padding:10px; border:1px solid #eee;" id="repSedinte">—</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px; border:1px solid #eee; background:#f8f5f0; font-weight:700;">Număr ședințe anulate</td>
+                        <td style="padding:10px; border:1px solid #eee;" id="repAnulate">—</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px; border:1px solid #eee; background:#f8f5f0; font-weight:700;">Starea generală</td>
+                        <td style="padding:10px; border:1px solid #eee;" id="repStare">—</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Progrese -->
+            <div class="report-section">
+                <h3>🌟 Progrese înregistrate</h3>
+                <p id="repProgrese" class="empty">Nu au fost notate progrese.</p>
+            </div>
+
+            <!-- Dificultăți -->
+            <div class="report-section">
+                <h3>⚠️ Dificultăți / comportamente problematice</h3>
+                <p id="repDificultati" class="empty">Nu au fost notate dificultăți.</p>
+            </div>
+
+            <!-- Obiective -->
+            <div class="report-section">
+                <h3>🎯 Obiective pentru luna următoare</h3>
+                <p id="repObiective" class="empty">Nu au fost notate obiective.</p>
+            </div>
+
+            <!-- Familie -->
+            <div class="report-section">
+                <h3>👨‍👩‍👧‍👦 Observații pentru familie</h3>
+                <p id="repFamilie" class="empty">Nu au fost notate recomandări.</p>
+            </div>
+
+            <!-- Sessions -->
+            <div class="report-section">
+                <h3>📋 Ședințe din lună</h3>
+                <div id="sessionsContainer"></div>
+            </div>
+
+            <!-- Signature -->
+            <div class="signature-section">
+                <div class="signature-box">
+                    <p><strong>Psiholog,</strong></p>
+                    <div class="line"><strong>Cristina Pîslariu</strong></div>
+                    <div class="date-line">Data: <span id="signDate"></span></div>
+                </div>
+                <div class="signature-box">
+                    <p><strong>Luat la cunoștință,</strong></p>
+                    <div class="line"><strong>Părintele / Tutorele</strong></div>
+                    <div class="date-line">Data: …………………</div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="report-footer">
+                Cristina Pîslariu — Cabinet Individual de Psihologie · CIF: 54275086 · cipislariucristina@gmail.com · 0735 101 358<br>
+                Str. Ion Creangă, nr. 1, Fălticeni, Suceava · Document confidențial conform GDPR
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions-bar">
+            <button class="btn-main" onclick="exportPDF()">📥 Exportă PDF</button>
+            <button class="btn-sec" onclick="window.print()">🖨️ Tipărește</button>
+            <button class="btn-sec" onclick="window.location.href='rapoarte-lunare.html?id=' + patientId">← Înapoi la Rapoarte</button>
+        </div>
+    </div>
+</main>
+
+<script>
+    const SUPABASE_URL = 'https://yexvpbgkrzerkizscgfn.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_q52fh6Xa3yNm3q0akTrKKw_7AlxLrCU';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const session = JSON.parse(sessionStorage.getItem('session') || 'null');
+    if (!session || session.role !== 'psiholog') window.location.href = 'index.html';
+
+    const MONTHS_RO = ['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];
+
+    let patientId = null;
+    let patient = null;
+    let month = null;
+    let monthlyReport = null;
+    let fisaSessions = [];
+
+    async function init() {
+        const urlParams = new URLSearchParams(window.location.search);
+        patientId = urlParams.get('patientId');
+        month = urlParams.get('month');
+
+        if (!patientId || !month) {
+            window.location.href = 'rapoarte-lunare.html';
+            return;
+        }
+
+        // Load patient
+        const { data: pat } = await _supabase.from('patients').select('*').eq('id', patientId).single();
+        patient = pat;
+
+        // Load monthly report
+        const { data: rep } = await _supabase.from('monthly_reports').select('*').eq('patient_id', patientId).eq('month', month).maybeSingle();
+        monthlyReport = rep;
+
+        // Load fisa sessions
+        const { data: fisa } = await _supabase.from('fisa_data').select('data').eq('patient_id', patientId).maybeSingle();
+        fisaSessions = (fisa && Array.isArray(fisa.data)) ? fisa.data : [];
+
+        renderReport();
+    }
+
+    function renderReport() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+        document.getElementById('reportContent').style.display = 'block';
+
+        const [yr, mo] = month.split('-');
+        const monthName = MONTHS_RO[parseInt(mo)-1] + ' ' + yr;
+
+        // Header
+        document.getElementById('monthTitle').textContent = monthName + ' · ' + (patient?.name || '');
+
+        // Patient info
+        document.getElementById('patientInfo').innerHTML = `
+            <div class="patient-avatar">${patient?.photo ? `<img src="${patient.photo}">` : '👤'}</div>
+            <div class="patient-details">
+                <h2>${patient?.name || 'Fără nume'}</h2>
+                <p>${patient?.age ? patient?.age + ' ani' : ''}</p>
+                <p>${patient?.email || ''}</p>
+            </div>
+        `;
+
+        // Sessions in month
+        const sessionsInMonth = fisaSessions.filter(s => s.date && s.date.startsWith(month));
+        const totalObj = sessionsInMonth.reduce((a, s) => a + (s.categories||[]).reduce((b,c) => b + (c.subItems||[]).length, 0), 0);
+        const doneObj = sessionsInMonth.reduce((a, s) => a + (s.categories||[]).reduce((b,c) => b + (c.subItems||[]).filter(i=>i.completed).length, 0), 0);
+        const archivedCats = sessionsInMonth.reduce((a, s) => a + (s.archivedCategories||[]).length, 0);
+
+        // Stats
+        document.getElementById('statsSection').innerHTML = `
+            <div class="stat-box">
+                <div class="number">${sessionsInMonth.length}</div>
+                <div class="label">Ședințe în ${MONTHS_RO[parseInt(mo)-1]}</div>
+            </div>
+            <div class="stat-box">
+                <div class="number">${totalObj}</div>
+                <div class="label">Obiective lucrate</div>
+            </div>
+            <div class="stat-box">
+                <div class="number">${doneObj}</div>
+                <div class="label">Obiective finalizate</div>
+            </div>
+            <div class="stat-box">
+                <div class="number">${archivedCats}</div>
+                <div class="label">Categorii arhivate</div>
+            </div>
+        `;
+
+        // Monthly report data
+        document.getElementById('repSedinte').textContent = monthlyReport?.sedinte ?? sessionsInMonth.length;
+        document.getElementById('repAnulate').textContent = monthlyReport?.anulate ?? 0;
+        document.getElementById('repStare').textContent = monthlyReport?.stare || '—';
+
+        document.getElementById('repProgrese').innerHTML = monthlyReport?.progrese || '<span class="empty">Nu au fost notate progrese.</span>';
+        document.getElementById('repDificultati').innerHTML = monthlyReport?.dificultati || '<span class="empty">Nu au fost notate dificultăți.</span>';
+        document.getElementById('repObiective').innerHTML = monthlyReport?.obiective || '<span class="empty">Nu au fost notate obiective.</span>';
+        document.getElementById('repFamilie').innerHTML = monthlyReport?.familie || '<span class="empty">Nu au fost notate recomandări.</span>';
+
+        // Sessions table
+        const sessionsContainer = document.getElementById('sessionsContainer');
+        if (sessionsInMonth.length > 0) {
+            sessionsContainer.innerHTML = `
+                <table class="sessions-table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Observații</th>
+                            <th style="text-align:center;">Obiective</th>
+                            <th style="text-align:center;">Finalizate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sessionsInMonth.map(s => {
+                            const d = s.date ? new Date(s.date).toLocaleDateString('ro-RO', {day:'2-digit', month:'long', year:'numeric'}) : '—';
+                            const total = (s.categories||[]).reduce((a,c)=>a+(c.subItems||[]).length,0);
+                            const done = (s.categories||[]).reduce((a,c)=>a+(c.subItems||[]).filter(i=>i.completed).length,0);
+                            return `<tr>
+                                <td class="session-date">${d}</td>
+                                <td class="session-obs">${s.obs || '—'}</td>
+                                <td class="session-stats"><strong>${total}</strong></td>
+                                <td class="session-stats"><strong style="color:var(--verde-sage);">${done}</strong></td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+        } else {
+            sessionsContainer.innerHTML = '<p class="empty">Nicio ședință înregistrată în această lună.</p>';
+        }
+
+        // Signature date
+        document.getElementById('signDate').textContent = new Date().toLocaleDateString('ro-RO');
+    }
+
+    function exportPDF() {
+        const element = document.getElementById('printableArea');
+        const [yr, mo] = month.split('-');
+        const monthName = MONTHS_RO[parseInt(mo)-1] + '_' + yr;
+        
+        const opt = {
+            margin: [10,10,10,10],
+            filename: `Raport_Detalii_${patient?.name?.replace(/\s/g,'_') || 'pacient'}_${monthName}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        
+        html2pdf().set(opt).from(element).save();
+    }
+
+    init();
+</script>
+</body>
+</html>
