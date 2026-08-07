@@ -35,6 +35,7 @@
                     <li class="nav-psiholog" style="display:none;"><a href="calendar.html">Calendar</a></li>
                     <li class="nav-comun" style="display:none;"><a href="documente-parinte.html">Plan intervenție</a></li>
                     <li class="nav-psiholog" style="display:none;"><a href="fisa-notare.html">Participanți</a></li>
+                    <li class="nav-angajat" style="display:none;"><a href="fisa-notare.html">Participanți</a></li>
                     <li><a href="contact.html">Contact</a></li>
                     <li id="auth-btn-container"><a href="javascript:void(0)" class="trigger-login btn-cta" style="padding:0.5rem 1.2rem; font-size:0.88rem;">Intră în cont</a></li>
                     <li id="logout-btn-container" style="display:none;"><a href="javascript:void(0)" onclick="logout()">Logout</a></li>
@@ -221,6 +222,7 @@
     // ===== UI =====
     function updateUI(role) {
         const itemsPsiholog = document.querySelectorAll('.nav-psiholog');
+        const itemsAngajat = document.querySelectorAll('.nav-angajat');
         const itemsComun = document.querySelectorAll('.nav-comun');
         const authBtn = document.getElementById('auth-btn-container');
         const logoutBtn = document.getElementById('logout-btn-container');
@@ -233,9 +235,15 @@
             if (role === 'psiholog') {
                 itemsPsiholog.forEach(el => el.style.display = 'block');
                 itemsComun.forEach(el => el.style.display = 'block');
+                itemsAngajat.forEach(el => el.style.display = 'none');
+            } else if (role === 'angajat') {
+                itemsAngajat.forEach(el => el.style.display = 'block');
+                itemsPsiholog.forEach(el => el.style.display = 'none');
+                itemsComun.forEach(el => el.style.display = 'none');
             } else {
                 itemsComun.forEach(el => el.style.display = 'block');
                 itemsPsiholog.forEach(el => el.style.display = 'none');
+                itemsAngajat.forEach(el => el.style.display = 'none');
             }
         } else {
             if (authBtn) authBtn.style.display = 'block';
@@ -243,6 +251,7 @@
             if (heroBtn) heroBtn.style.display = 'inline-flex';
             itemsPsiholog.forEach(el => el.style.display = 'none');
             itemsComun.forEach(el => el.style.display = 'none');
+            itemsAngajat.forEach(el => el.style.display = 'none');
         }
     }
 
@@ -288,12 +297,10 @@
         btn.textContent = 'Se verifică...';
         btn.disabled = true;
 
-        const { data, error } = await _supabase
-            .from('users')
-            .select('*')
-            .eq('email', emailVal)
-            .eq('password', passVal)
-            .single();
+        const { data: rows, error } = await _supabase
+            .rpc('login_check', { p_email: emailVal, p_password: passVal });
+
+        const data = (rows && rows.length > 0) ? rows[0] : null;
 
         btn.textContent = 'Autentifică-te';
         btn.disabled = false;

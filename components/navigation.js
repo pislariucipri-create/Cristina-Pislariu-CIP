@@ -30,6 +30,10 @@ const NAV_ITEMS = {
         { href: 'evidenta.html', text: 'Evidență', icon: '📈' },
         { href: 'arhiva.html', text: 'Arhivă', icon: '🗄️' }
     ],
+    angajat: [
+        { href: 'index.html', text: 'Acasă', icon: '🏠' },
+        { href: 'fisa-notare.html', text: 'Participanți', icon: '👥' }
+    ],
     parinte: [
         { href: 'index.html', text: 'Acasă', icon: '🏠' },
         { href: 'documente-parinte.html', text: 'Plan Intervenție', icon: '📋' },
@@ -145,12 +149,10 @@ function initLoginModal() {
                 btn.textContent = 'Se verifică...';
                 btn.disabled = true;
                 
-                const { data, error } = await _supabase
-                    .from('users')
-                    .select('*')
-                    .eq('email', emailVal)
-                    .eq('password', passVal)
-                    .single();
+                const { data: rows, error } = await _supabase
+                    .rpc('login_check', { p_email: emailVal, p_password: passVal });
+
+                const data = (rows && rows.length > 0) ? rows[0] : null;
                 
                 btn.textContent = 'Autentifică-te';
                 btn.disabled = false;
@@ -167,7 +169,7 @@ function initLoginModal() {
                 
                 // Redirect based on role
                 setTimeout(() => {
-                    if (data.role === 'psiholog') {
+                    if (data.role === 'psiholog' || data.role === 'angajat') {
                         window.location.href = 'fisa-notare.html';
                     } else if (data.role === 'parinte') {
                         window.location.href = 'portal-parinte.html';

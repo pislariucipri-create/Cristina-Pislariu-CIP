@@ -150,6 +150,13 @@
         @media (max-width: 900px) {
             .bm-paper { padding: 30px 20px 40px; }
         }
+
+        /* ── RESTRICȚII ROL "ANGAJAT" ──
+           Angajatul vede doar lista de nume și poate deschide fișa de notare,
+           fără date sensibile (email/parolă părinte) și fără acțiuni de admin. */
+        body.role-angajat .employee-hide {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -159,19 +166,19 @@
             <ul>
                 <li><a href="index.html">Acasă</a></li>
                 <li><a href="fisa-notare.html" class="active">Participanţi</a></li>
-                <li><a href="rapoarte-lunare.html" style="color: #81a473;">📅 Rapoarte lunare</a></li>
-                <li><a href="evidenta.html" style="color: #c79e7f;">📊 Evidență</a></li>
-                <li><a href="arhiva.html" style="color: #c79e7f;">🗄️ Arhivă</a></li>
+                <li class="employee-hide"><a href="rapoarte-lunare.html" style="color: #81a473;">📅 Rapoarte lunare</a></li>
+                <li class="employee-hide"><a href="evidenta.html" style="color: #c79e7f;">📊 Evidență</a></li>
+                <li class="employee-hide"><a href="arhiva.html" style="color: #c79e7f;">🗄️ Arhivă</a></li>
                 <li id="logout-btn-container"><a href="javascript:void(0)" onclick="logout()" style="color: #a47373;">Logout</a></li>
             </ul>
         </nav>
     </header>
 
     <main class="admin-container">
-        <h1>Administrare Copii și Părinți</h1>
-        <p>Creează un profil nou pentru copil și generează automat contul părintelui.</p>
+        <h1 id="pageMainTitle">Administrare Copii și Părinți</h1>
+        <p id="pageMainSubtitle">Creează un profil nou pentru copil și generează automat contul părintelui.</p>
 
-        <section class="form-card">
+        <section class="form-card employee-hide">
             <h2>Adaugă Copil Nou</h2>
             <div class="form-grid">
                 <div class="input-group">
@@ -208,9 +215,15 @@
     const SUPABASE_KEY = 'sb_publishable_q52fh6Xa3yNm3q0akTrKKw_7AlxLrCU';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Verifică sesiune
+    // Verifică sesiune — acces permis psihologului și angajatului
     const session = JSON.parse(sessionStorage.getItem('session') || 'null');
-    if (!session || session.role !== 'psiholog') { window.location.href = "index.html"; }
+    if (!session || (session.role !== 'psiholog' && session.role !== 'angajat')) { window.location.href = "index.html"; }
+
+    if (session && session.role === 'angajat') {
+        document.body.classList.add('role-angajat');
+        document.getElementById('pageMainTitle').innerText = 'Copii';
+        document.getElementById('pageMainSubtitle').innerText = 'Selectează un copil pentru a deschide fișa de notare.';
+    }
 
     // ============================================================
     // ÎNCĂRCARE PACIENȚI
@@ -238,7 +251,7 @@
             const photo = p.photo || 'https://via.placeholder.com/60?text=...';
             container.innerHTML += `
                 <div class="patient-card" id="card-${p.id}">
-                    <button class="btn-delete-profile" onclick="deletePatient('${p.id}')" title="Șterge Profil">🗑️</button>
+                    <button class="btn-delete-profile employee-hide" onclick="deletePatient('${p.id}')" title="Șterge Profil">🗑️</button>
                     <div class="profile-section">
                         <div class="avatar-circle" onclick="document.getElementById('file-${p.id}').click()">
                             <img src="${photo}" id="img-${p.id}">
@@ -249,15 +262,15 @@
                             <div class="info-row">Vârstă: ${p.age} ani</div>
                         </div>
                     </div>
-                    <div class="info-row"><strong>Email:</strong> ${p.email}</div>
-                    <div class="info-row"><strong>Parolă:</strong> <span class="pass-display">${p.pass}</span></div>
+                    <div class="info-row employee-hide"><strong>Email:</strong> ${p.email}</div>
+                    <div class="info-row employee-hide"><strong>Parolă:</strong> <span class="pass-display">${p.pass}</span></div>
                     <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
                         <button class="btn-tool" onclick="window.location.href='fisa-individuala.html?id=${p.id}'">Fișă de notare</button>
-                        <button class="btn-tool" style="border-color: #795548; color: #795548;" 
+                        <button class="btn-tool employee-hide" style="border-color: #795548; color: #795548;" 
                                 onclick="window.location.href='documente-parinte.html?edit=true&id=${p.id}'">
                             Scrie Raport
                         </button>
-                        <button class="btn-tool" style="border-color: #5c6bc0; color: #5c6bc0; background: #f3f4fc;"
+                        <button class="btn-tool employee-hide" style="border-color: #5c6bc0; color: #5c6bc0; background: #f3f4fc;"
                                 onclick="openBehaviorPlan('${p.id}', '${p.name.replace(/'/g, "\\'")}')">
                              Plan Comportament
                         </button>

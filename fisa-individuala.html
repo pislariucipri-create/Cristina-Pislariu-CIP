@@ -228,6 +228,18 @@
             .sidebar { border-right: none; border-bottom: 1px solid #f0ebe3; max-height: 260px; }
             .main-content { padding: 20px 15px; }
         }
+
+        /* ── RESTRICȚII ROL "ANGAJAT" ──
+           Angajatul poate crea ședințe, adăuga categorii, adăuga obiective
+           și bifa scoruri, dar nu poate șterge/redenumi/arhiva nimic. */
+        body.role-angajat .btn-del-session,
+        body.role-angajat .btn-rename-cat,
+        body.role-angajat .btn-archive-cat,
+        body.role-angajat .btn-del-cat,
+        body.role-angajat .btn-del-row,
+        body.role-angajat .archived-section {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -269,6 +281,15 @@
     const SUPABASE_URL = 'https://yexvpbgkrzerkizscgfn.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_q52fh6Xa3yNm3q0akTrKKw_7AlxLrCU';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Verifică sesiune — acces permis psihologului și angajatului
+    const _session = JSON.parse(sessionStorage.getItem('session') || 'null');
+    if (!_session || (_session.role !== 'psiholog' && _session.role !== 'angajat')) {
+        window.location.href = "index.html";
+    }
+    if (_session && _session.role === 'angajat') {
+        document.body.classList.add('role-angajat');
+    }
 
     const urlParams = new URLSearchParams(window.location.search);
     const patientId = urlParams.get('id');
