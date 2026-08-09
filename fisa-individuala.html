@@ -230,16 +230,34 @@
         }
 
         /* ── RESTRICȚII ROL "ANGAJAT" ──
-           Angajatul poate crea ședințe, adăuga categorii, adăuga obiective
-           și bifa scoruri, dar nu poate șterge/redenumi/arhiva nimic. */
+           Angajatul poate doar: crea ședințe noi și nota Scoruri.
+           NU poate: crea/redenumi/arhiva/șterge categorii, adăuga/șterge
+           obiective, edita numele obiectivelor, Frecvență, Sd. sau Detalii. */
         body.role-angajat .btn-del-session,
         body.role-angajat .btn-rename-cat,
         body.role-angajat .btn-archive-cat,
         body.role-angajat .btn-del-cat,
         body.role-angajat .btn-del-row,
-        body.role-angajat .archived-section {
+        body.role-angajat .archived-section,
+        body.role-angajat #btnAddCategory,
+        body.role-angajat .btn-add-obj {
             display: none !important;
         }
+        .freq-input {
+            width: 100%; border: 1px solid #e8e0d8; border-radius: 6px;
+            padding: 4px 8px; font-family: var(--font-sans); font-size: 0.88rem;
+            color: var(--text-maro-inchis); background: var(--crem-fundal); outline: none;
+        }
+        .freq-input:focus { border-color: var(--verde-sage); }
+        .readonly-field { color: #999; }
+
+        /* ── GRUPARE ȘEDINȚE PE LUNI ── */
+        .session-month-group {
+            font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.5px; color: var(--maro-lemn); opacity: 0.75;
+            margin: 16px 0 8px 4px;
+        }
+        .session-month-group:first-child { margin-top: 0; }
     </style>
 </head>
 <body>
@@ -290,6 +308,9 @@
     if (_session && _session.role === 'angajat') {
         document.body.classList.add('role-angajat');
     }
+    const isAngajat = _session && _session.role === 'angajat';
+    // Câte zile în urmă vede angajatul ședințele în listă (poate fi ajustat)
+    const ANGAJAT_ZILE_VIZIBILE = 7;
 
     const urlParams = new URLSearchParams(window.location.search);
     const patientId = urlParams.get('id');
@@ -342,21 +363,50 @@
         }
 
         renderSidebar();
-        if (sessions.length > 0) selectSession(sessions[0].id);
+        if (sessions.length > 0) {
+            const startId = isAngajat ? sessions[sessions.length - 1].id : sessions[0].id;
+            selectSession(startId);
+        }
     }
 
     // ── SIDEBAR ───────────────────────────────────────────────────
     function renderSidebar() {
         const list = document.getElementById('sessionList');
         list.innerHTML = '';
-        if (sessions.length === 0) {
-            list.innerHTML = '<p style="text-align:center; color:#ccc; font-size:0.85rem; margin-top:20px;">Nicio ședință încă</p>';
+
+        // Angajatul vede doar ședințele din ultimele ANGAJAT_ZILE_VIZIBILE zile
+        let visibleSessions = sessions;
+        if (isAngajat) {
+            const limitDate = new Date();
+            limitDate.setHours(0,0,0,0);
+            limitDate.setDate(limitDate.getDate() - ANGAJAT_ZILE_VIZIBILE);
+            visibleSessions = sessions.filter(s => !s.date || new Date(s.date) >= limitDate);
+        }
+
+        if (visibleSessions.length === 0) {
+            list.innerHTML = `<p style="text-align:center; color:#ccc; font-size:0.85rem; margin-top:20px;">${isAngajat ? 'Nicio ședință recentă' : 'Nicio ședință încă'}</p>`;
             return;
         }
-        // Cele mai recente primele
-        [...sessions].reverse().forEach((s, revIdx) => {
-            const idx = sessions.length - 1 - revIdx;
-            const d = s.date ? new Date(s.date).toLocaleDateString('ro-RO', { day: '2-digit', month: 'long', year: 'numeric' }) : '—';
+
+        // Cele mai recente primele, grupate pe lună
+        let lastMonthKey = null;
+        [...visibleSessions].reverse().forEach((s) => {
+            const idx = sessions.findIndex(x => x.id === s.id); // poziția reală, pt "Ședința N"
+            const dateObj = s.date ? new Date(s.date) : null;
+            const monthKey = dateObj ? `${dateObj.getFullYear()}-${dateObj.getMonth()}` : 'fara-data';
+
+            if (monthKey !== lastMonthKey) {
+                const monthLabel = dateObj
+                    ? dateObj.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' })
+                    : 'Fără dată';
+                const header = document.createElement('div');
+                header.className = 'session-month-group';
+                header.textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+                list.appendChild(header);
+                lastMonthKey = monthKey;
+            }
+
+            const d = dateObj ? dateObj.toLocaleDateString('ro-RO', { day: '2-digit', month: 'long', year: 'numeric' }) : '—';
             const totalObj = (s.categories || []).reduce((acc, c) => acc + (c.subItems || []).length, 0);
             const completedObj = (s.categories || []).reduce((acc, c) => acc + (c.subItems || []).filter(i => i.completed).length, 0);
             const div = document.createElement('div');
@@ -447,9 +497,9 @@
                     id: uid(),
                     name: item.name,
                     scores: '',          // scorurile se resetează pentru ședința nouă
-                    locatie: item.locatie || '',
-                    persoana: item.persoana || '',
-                    detalii_extra: item.detalii_extra || '',
+                    locatie: '',         // Frecvență — proprie fiecărei ședințe, nu se moștenește
+                    persoana: '',        // Sd. — proprie fiecărei ședințe, nu se moștenește
+                    detalii_extra: '',   // Detalii — proprie fiecărei ședințe, nu se moștenește
                     completed: false
                 }))
             }));
@@ -506,7 +556,7 @@
 
             <!-- Actiuni -->
             <div class="actions-bar">
-                <button class="btn-main" onclick="addCategory()">+ Adaugă Categorie</button>
+                <button class="btn-main" id="btnAddCategory" onclick="addCategory()">+ Adaugă Categorie</button>
                 <button class="btn-secondary-action" onclick="saveData()">💾 Salvează acum</button>
             </div>
 
@@ -563,8 +613,8 @@
                             <tr>
                                 <th style="width:22%;">Obiectiv specific</th>
                                 <th style="width:26%;">Scoruri</th>
-                                <th style="width:16%;">Locație</th>
-                                <th style="width:16%;">Persoană</th>
+                                <th style="width:16%;">Frecvență</th>
+                                <th style="width:16%;">Sd.</th>
                                 <th style="width:16%;">Detalii</th>
                                 <th style="width:4%;"></th>
                             </tr>
@@ -600,11 +650,27 @@
             // Construim scorurile vizual
             const scoresHtml = buildScoresHtml(item.scores || '');
 
+            const nameCell = isAngajat
+                ? `<span style="font-weight:700;">${item.name || ''}</span>`
+                : `<span contenteditable="true" 
+                          onblur="updateField('${cat.id}', ${itemIdx}, 'name', this.innerText)"
+                          style="font-weight:700;">${item.name || ''}</span>`;
+
+            const freqCell = isAngajat
+                ? `<span class="readonly-field">${item.locatie || ''}</span>`
+                : `<input type="number" inputmode="numeric" class="freq-input" value="${item.locatie || ''}" onblur="updateField('${cat.id}', ${itemIdx}, 'locatie', this.value)">`;
+
+            const sdCell = isAngajat
+                ? `<span class="readonly-field">${item.persoana || ''}</span>`
+                : `<span contenteditable="true" onblur="updateField('${cat.id}', ${itemIdx}, 'persoana', this.innerText)">${item.persoana || ''}</span>`;
+
+            const detCell = isAngajat
+                ? `<span class="readonly-field">${item.detalii_extra || ''}</span>`
+                : `<span contenteditable="true" onblur="updateField('${cat.id}', ${itemIdx}, 'detalii_extra', this.innerText)">${item.detalii_extra || ''}</span>`;
+
             row.innerHTML = `
                 <td>
-                    <span contenteditable="true" 
-                          onblur="updateField('${cat.id}', ${itemIdx}, 'name', this.innerText)"
-                          style="font-weight:700;">${item.name || ''}</span>
+                    ${nameCell}
                     ${item.completed ? '<span class="success-badge">✓ SUCCES</span>' : ''}
                 </td>
                 <td>
@@ -616,9 +682,9 @@
                         <button class="btn-undo" onclick="removeScore('${cat.id}', ${itemIdx})" title="Șterge ultimul scor">⌫</button>
                     </div>
                 </td>
-                <td><span contenteditable="true" onblur="updateField('${cat.id}', ${itemIdx}, 'locatie', this.innerText)">${item.locatie || ''}</span></td>
-                <td><span contenteditable="true" onblur="updateField('${cat.id}', ${itemIdx}, 'persoana', this.innerText)">${item.persoana || ''}</span></td>
-                <td><span contenteditable="true" onblur="updateField('${cat.id}', ${itemIdx}, 'detalii_extra', this.innerText)">${item.detalii_extra || ''}</span></td>
+                <td>${freqCell}</td>
+                <td>${sdCell}</td>
+                <td>${detCell}</td>
                 <td><button class="btn-del-row" onclick="deleteObjective('${cat.id}', ${itemIdx})" title="Șterge">🗑</button></td>
             `;
             tbody.appendChild(row);
@@ -853,8 +919,8 @@
                         const status = item.completed ? '✅' : '⬜';
                         content += `    ${status} ${item.name}`;
                         if (item.scores) content += ` [${item.scores}]`;
-                        if (item.locatie) content += ` | Loc: ${item.locatie}`;
-                        if (item.persoana) content += ` | Pers: ${item.persoana}`;
+                        if (item.locatie) content += ` | Frecv: ${item.locatie}`;
+                        if (item.persoana) content += ` | Sd: ${item.persoana}`;
                         if (item.detalii_extra) content += ` | ${item.detalii_extra}`;
                         content += '\n';
                     });

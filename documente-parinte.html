@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Dancing+Script:wght@500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Quicksand', sans-serif; background: #e0dbd5; }
@@ -93,6 +94,26 @@
         .paper blockquote { border-left: 3px solid #81a473; margin: 8px 0; padding: 5px 14px; color: #555; font-style: italic; }
         .paper hr { border: none; border-top: 1px solid #bbb; margin: 14px 0; }
         .paper a { color: #2e7d32; }
+
+        /* PANOU "DOAR PSIHOLOG" — matrice scoruri pe ședințe */
+        .psi-only-panel {
+            background: #fff8ec; border: 2px dashed #d7a24a; border-radius: 10px;
+            width: 210mm; max-width: 100%; margin: 18px 0 40px; padding: 16px 20px;
+            color: #5a4324; font-family: 'Quicksand', sans-serif;
+        }
+        .psi-only-badge {
+            display: inline-block; background: #d7a24a; color: white;
+            font-size: 0.75rem; font-weight: 700; padding: 3px 12px;
+            border-radius: 20px; margin-bottom: 8px;
+        }
+        .psi-only-panel h3 { font-family: 'Quicksand', sans-serif; font-size: 1.05rem; color: #5a4324; }
+        table.score-matrix { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
+        table.score-matrix th, table.score-matrix td {
+            border: 1px solid #e3cfa0; padding: 5px 9px; text-align: left;
+        }
+        table.score-matrix th { background: #f4e3c1; font-weight: 700; white-space: nowrap; }
+        table.score-matrix td { white-space: nowrap; }
+        @media print { .psi-only-panel { display: none !important; } }
 
         /* Loading */
         .loading { display: flex; align-items: center; justify-content: center; min-height: 60vh; color: #666; font-size: 1.1rem; gap: 10px; }
@@ -282,23 +303,206 @@
             '<a class="btn-nav" href="fisa-notare.html">← Participanți</a>' +
             '<span class="nav-title" id="ntitle">Plan de intervenție</span>';
         document.getElementById('navRight').innerHTML =
+            '<button class="btn-nav" style="background:#8d6e63;" onclick="regenerateStrategiiTable()">🔄 Sincronizează tabel</button>' +
             '<button class="btn-nav save" onclick="savePlan()">💾 Salvează</button>' +
             '<button class="btn-nav pdf" id="btnPdfPsi" onclick="exportPDF()">🖨️ PDF</button>';
 
-        const [{ data: patient }, { data: plan }] = await Promise.all([
+        const [{ data: patient }, { data: plan }, { data: fisa }] = await Promise.all([
             _supabase.from('patients').select('*').eq('id', pid).single(),
-            _supabase.from('intervention_plans').select('*').eq('patient_id', pid).maybeSingle()
+            _supabase.from('intervention_plans').select('*').eq('patient_id', pid).maybeSingle(),
+            _supabase.from('fisa_data').select('data').eq('patient_id', pid).maybeSingle()
         ]);
 
         if (patient) document.getElementById('ntitle').textContent = 'Plan — ' + patient.name;
 
-        if (plan) {
-            planId = plan.id;
-            buildEditor(patient, plan.html_content, null);
-        } else {
-            const { data: fisa } = await _supabase.from('fisa_data').select('data').eq('patient_id', pid).maybeSingle();
-            buildEditor(patient, null, fisa ? fisa.data : null);
+        if (plan) planId = plan.id;
+        buildEditor(patient, plan ? plan.html_content : null, fisa ? fisa.data : null);
+    }
+
+    /* ── MATRICE SCORURI (vizibilă doar psihologului, nu se salvează în plan) ── */
+    let scoreMatrixExport = null; // date brute pentru exportul Excel
+
+    function buildScoreMatrix(patient, sessions) {
+        scoreMatrixExport = null;
+        if (!sessions || !sessions.length) return '';
+        // Ignorăm formatul vechi (fără date de ședință)
+        if (sessions[0] && sessions[0].catName !== undefined) return '';
+
+        const sorted = [...sessions]
+            .filter(s => (s.categories||[]).length)
+            .sort((a,b) => new Date(a.date||0) - new Date(b.date||0));
+        if (!sorted.length) return '';
+
+        // Colectăm domenii/obiective unice, păstrând ordinea apariției
+        const catOrder = [];
+        const catMap = {};
+        sorted.forEach(s => (s.categories||[]).forEach(cat => {
+            if (!catMap[cat.catName]) { catMap[cat.catName] = []; catOrder.push(cat.catName); }
+            (cat.subItems||[]).forEach(item => {
+                if (!catMap[cat.catName].includes(item.name)) catMap[cat.catName].push(item.name);
+            });
+        }));
+
+        const dateLabelsShort = sorted.map(s => s.date ? new Date(s.date).toLocaleDateString('ro-RO',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '—');
+        const dateLabelsFull  = sorted.map(s => s.date ? new Date(s.date).toLocaleDateString('ro-RO',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—');
+        const dateHeaders = dateLabelsShort.map(d => '<th>'+d+'</th>').join('');
+
+        let bodyRows = '';
+        const exportRows = [['Domeniu / Obiectiv', ...dateLabelsFull]];
+        catOrder.forEach(catName => {
+            bodyRows += '<tr><td colspan="'+(sorted.length+1)+'" style="background:#f4e3c1;"><strong>📂 '+catName+'</strong></td></tr>';
+            exportRows.push(['📂 ' + catName]);
+            catMap[catName].forEach(objName => {
+                const scores = sorted.map(s => {
+                    const cat = (s.categories||[]).find(c => c.catName === catName);
+                    const item = cat ? (cat.subItems||[]).find(i => i.name === objName) : null;
+                    return (item && item.scores) ? item.scores : '';
+                });
+                const cells = scores.map(sc => '<td style="text-align:center;">'+(sc || '—')+'</td>').join('');
+                bodyRows += '<tr><td>Ob: '+(objName||'')+'</td>'+cells+'</tr>';
+                exportRows.push(['Ob: ' + (objName||''), ...scores]);
+            });
+        });
+
+        scoreMatrixExport = { patientName: patient ? patient.name : '', rows: exportRows };
+
+        return '<div class="psi-only-panel">' +
+            '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">' +
+                '<span class="psi-only-badge">🔒 Vizibil doar pentru psiholog — nu apare în planul trimis părintelui</span>' +
+                '<button class="btn-nav" style="background:#5d4037;" onclick="exportScoreMatrixExcel()">📊 Export Excel</button>' +
+            '</div>' +
+            '<h3>Evidență scoruri pe ședințe</h3>' +
+            '<div style="overflow-x:auto;">' +
+            '<table class="score-matrix"><thead><tr><th>Nume: '+(patient?patient.name:'')+'</th>'+dateHeaders+'</tr></thead>' +
+            '<tbody>'+bodyRows+'</tbody></table>' +
+            '</div></div>';
+    }
+
+    function exportScoreMatrixExcel() {
+        if (!scoreMatrixExport || !scoreMatrixExport.rows.length) { toast('Nu există date de exportat.', '⚠️'); return; }
+        if (typeof XLSX === 'undefined') { toast('Biblioteca de export nu s-a încărcat. Reîncarcă pagina.', '❌'); return; }
+
+        const aoa = [
+            ['Nume:', scoreMatrixExport.patientName],
+            [],
+            ...scoreMatrixExport.rows
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        ws['!cols'] = [{ wch: 26 }, ...scoreMatrixExport.rows[0].slice(1).map(() => ({ wch: 12 }))];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Evidenta scoruri');
+        const safeName = (scoreMatrixExport.patientName || 'pacient').trim().replace(/[^\w\-]+/g, '_');
+        XLSX.writeFile(wb, 'Evidenta_scoruri_' + safeName + '.xlsx');
+        toast('Fișierul Excel a fost descărcat! ✅');
+    }
+
+    /* ── OBIECTIVE DIN FIȘĂ (unite din toate ședințele, nu doar prima) ── */
+    function collectAllObjectives(fisaData) {
+        if (!fisaData || !fisaData.length) return [];
+        if (fisaData[0] && fisaData[0].catName !== undefined) {
+            // format vechi: fisaData e deja o listă de categorii
+            const out = [];
+            fisaData.forEach(c => (c.subItems||[]).forEach(it => out.push({ catName: c.catName, item: it })));
+            return out;
         }
+        const seenKeys = new Set();
+        const out = [];
+        fisaData.forEach(s => (s.categories||[]).forEach(cat => {
+            (cat.subItems||[]).forEach(item => {
+                const key = (cat.catName||'') + '|||' + (item.name||'');
+                if (!seenKeys.has(key)) { seenKeys.add(key); out.push({ catName: cat.catName, item }); }
+            });
+        }));
+        return out;
+    }
+
+    function buildStrategiiRowsHtml(objs, startNr) {
+        let nr = (startNr || 0) + 1;
+        let rows = '';
+        objs.forEach(({catName, item}) => {
+            rows += '<tr>' +
+                '<td style="text-align:center;">'+(nr++)+'</td>' +
+                '<td><b>'+(catName||'')+'</b></td>' +
+                '<td>&nbsp;</td>' +
+                '<td>'+(item.name||'')+'</td>' +
+                '<td style="text-align:center;">'+(item.persoana||'')+'</td>' +
+                '<td>'+(item.detalii_extra||'')+'</td>' +
+                '<td style="text-align:center;">'+(item.locatie||'')+'</td>' +
+            '</tr>';
+        });
+        return rows;
+    }
+
+    function renumberStrategiiTable(table) {
+        [...table.querySelectorAll('tbody tr')].forEach((tr, i) => {
+            const cells = tr.querySelectorAll('td');
+            if (cells.length >= 7) cells[0].textContent = i + 1;
+        });
+    }
+
+    /* ── SINCRONIZARE TABEL cu fișa individuală (fără să șteargă completările manuale) ── */
+    async function regenerateStrategiiTable() {
+        if (!currentPatientId) return;
+        const { data: fisa } = await _supabase.from('fisa_data').select('data').eq('patient_id', currentPatientId).maybeSingle();
+        const objs = collectAllObjectives(fisa ? fisa.data : null);
+        if (!objs.length) { toast('Nu există date în fișa individuală a acestui copil.', 'ℹ️'); return; }
+        if (!paper) { toast('Documentul nu este încărcat.', '⚠️'); return; }
+
+        function isCorrectStructure(t) {
+            if (!t) return false;
+            const ths = [...t.querySelectorAll('thead th')].map(th => th.textContent.trim());
+            return ths.length === 7 && ths[0].startsWith('Nr');
+        }
+
+        let table = document.getElementById('tabelStrategii');
+        if (!table) {
+            // Planuri mai vechi: căutăm tabelul după titlul secțiunii
+            const heading = [...paper.querySelectorAll('h2')].find(h => h.textContent.trim() === 'Strategii de Intervenție');
+            if (heading && heading.nextElementSibling && heading.nextElementSibling.tagName === 'TABLE') {
+                table = heading.nextElementSibling;
+            }
+        }
+
+        if (table && !isCorrectStructure(table)) {
+            if (!confirm('Tabelul "Strategii de Intervenție" din acest document are un format vechi.\n\nÎl înlocuiesc cu formatul nou (Nr. Crt. / Domeniu / Obiectiv general / Ob. operațional / Sd. / Intervenție / Frecvență) și preiau datele din fișă?\n\nAtenție: conținutul scris manual în acel tabel se va pierde.')) return;
+            table.remove();
+            table = null;
+        }
+
+        if (!table) {
+            const newTableHtml =
+                '<table id="tabelStrategii"><thead><tr>' +
+                    '<th style="width:6%">Nr. Crt.</th><th style="width:14%">Domeniu</th>' +
+                    '<th style="width:18%">Obiectiv general</th><th style="width:20%">Ob. operațional</th>' +
+                    '<th style="width:8%">Sd.</th><th style="width:20%">Intervenție</th>' +
+                    '<th style="width:14%">Frecvență</th>' +
+                '</tr></thead><tbody>' + buildStrategiiRowsHtml(objs) + '</tbody></table>';
+
+            const heading = [...paper.querySelectorAll('h2')].find(h => h.textContent.trim() === 'Strategii de Intervenție');
+            if (heading) {
+                heading.insertAdjacentHTML('afterend', newTableHtml + '<br>');
+            } else {
+                paper.insertAdjacentHTML('beforeend', '<h2>Strategii de Intervenție</h2>' + newTableHtml + '<br>');
+            }
+            toast('Tabelul a fost creat și completat din fișă! ✅');
+            return;
+        }
+
+        // Tabel corect existent → adăugăm doar obiectivele lipsă, păstrăm rândurile și completările existente
+        const tbody = table.querySelector('tbody');
+        const existingKeys = new Set();
+        [...tbody.querySelectorAll('tr')].forEach(tr => {
+            const tds = tr.querySelectorAll('td');
+            if (tds.length < 4) return;
+            existingKeys.add(tds[1].textContent.trim() + '|||' + tds[3].textContent.trim());
+        });
+
+        const missing = objs.filter(o => !existingKeys.has((o.catName||'').trim() + '|||' + (o.item.name||'').trim()));
+        if (!missing.length) { toast('Tabelul e deja la zi cu fișa individuală. ✅'); return; }
+
+        tbody.insertAdjacentHTML('beforeend', buildStrategiiRowsHtml(missing, tbody.querySelectorAll('tr').length));
+        renumberStrategiiTable(table);
+        toast(missing.length + ' obiectiv(e) nou(i) adăugat(e) în tabel! ✅');
     }
 
     function buildEditor(patient, html, fisaData) {
@@ -307,19 +511,8 @@
         const today = new Date().toLocaleDateString('ro-RO');
 
         if (!html) {
-            let rows = '';
-            if (fisaData && fisaData.length) {
-                let cats = [];
-                if (fisaData[0] && fisaData[0].catName !== undefined) {
-                    cats = fisaData;
-                } else {
-                    const seen = new Set();
-                    fisaData.forEach(s => (s.categories||[]).forEach(c => { if (!seen.has(c.catName)) { seen.add(c.catName); cats.push(c); } }));
-                }
-                cats.forEach(c => (c.subItems||[]).forEach(it =>
-                    rows += '<tr><td><b>'+(c.catName||'')+'</b></td><td>'+(it.name||'')+'</td><td>Antecedente: …<br>Înlocuire: …</td><td>Prompt verbal</td><td>'+(it.detalii_extra||'')+'</td></tr>'
-                ));
-            }
+            const objs = collectAllObjectives(fisaData);
+            const rows = buildStrategiiRowsHtml(objs);
 
             html =
                 '<p style="display:flex;justify-content:space-between;font-size:11pt;">' +
@@ -337,17 +530,20 @@
                 '<p><strong>Diagnostic:</strong> '+diag+'</p>' +
                 '<p><strong>Tratament medicamentos:</strong> ..........</p><br>' +
                 '<h2>Strategii de Intervenție</h2>' +
-                '<table><thead><tr>' +
-                    '<th style="width:20%">Domeniu</th><th style="width:20%">Subdomeniu</th>' +
-                    '<th style="width:25%">Strategii</th><th style="width:15%">Nivel Prompt</th>' +
-                    '<th style="width:20%">Observații</th>' +
-                '</tr></thead><tbody>' + (rows || '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>') + '</tbody></table><br>' +
+                '<table id="tabelStrategii"><thead><tr>' +
+                    '<th style="width:6%">Nr. Crt.</th><th style="width:14%">Domeniu</th>' +
+                    '<th style="width:18%">Obiectiv general</th><th style="width:20%">Ob. operațional</th>' +
+                    '<th style="width:8%">Sd.</th><th style="width:20%">Intervenție</th>' +
+                    '<th style="width:14%">Frecvență</th>' +
+                '</tr></thead><tbody>' + (rows || '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>') + '</tbody></table><br>' +
                 '<h2>Obiective și recomandări</h2>' +
                 '<p>Introduceți aici obiectivele și recomandările...</p>';
         }
 
         document.getElementById('appContent').innerHTML =
-            '<div class="doc-zone"><div class="paper" id="editablePaper" contenteditable="true" spellcheck="true">'+html+'</div></div>';
+            '<div class="doc-zone"><div class="paper" id="editablePaper" contenteditable="true" spellcheck="true">'+html+'</div>' +
+            buildScoreMatrix(patient, fisaData) +
+            '</div>';
 
         paper = document.getElementById('editablePaper');
 
