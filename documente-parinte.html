@@ -89,6 +89,7 @@
         .paper table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 11pt; }
         .paper table td, .paper table th { border: 1px solid #000; padding: 6px 8px; vertical-align: top; min-width: 40px; }
         .paper table th { background: #f0f0f0; font-weight: bold; text-align: center; }
+        .paper tr { page-break-inside: avoid; break-inside: avoid; }
         .paper ul, .paper ol { margin: 6px 0 6px 24px; }
         .paper li { margin: 3px 0; }
         .paper blockquote { border-left: 3px solid #81a473; margin: 8px 0; padding: 5px 14px; color: #555; font-style: italic; }
@@ -114,6 +115,9 @@
         table.score-matrix th { background: #f4e3c1; font-weight: 700; white-space: nowrap; }
         table.score-matrix td { white-space: nowrap; }
         @media print { .psi-only-panel { display: none !important; } }
+        .month-filter { margin: 8px 0 12px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .month-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; background: #fff; border: 1px solid #e3cfa0; border-radius: 12px; padding: 3px 10px; cursor: pointer; user-select: none; }
+        .month-chip input { accent-color: #d7a24a; cursor: pointer; }
 
         /* Loading */
         .loading { display: flex; align-items: center; justify-content: center; min-height: 60vh; color: #666; font-size: 1.1rem; gap: 10px; }
@@ -345,7 +349,8 @@
 
         const dateLabelsShort = sorted.map(s => s.date ? new Date(s.date).toLocaleDateString('ro-RO',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '—');
         const dateLabelsFull  = sorted.map(s => s.date ? new Date(s.date).toLocaleDateString('ro-RO',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—');
-        const dateHeaders = dateLabelsShort.map(d => '<th>'+d+'</th>').join('');
+        const colMonths = sorted.map(s => s.date ? s.date.slice(0,7) : '');
+        const dateHeaders = dateLabelsShort.map((d,i) => '<th data-month="'+colMonths[i]+'">'+d+'</th>').join('');
 
         let bodyRows = '';
         const exportRows = [['Domeniu / Obiectiv', ...dateLabelsFull]];
@@ -358,13 +363,27 @@
                     const item = cat ? (cat.subItems||[]).find(i => i.name === objName) : null;
                     return (item && item.scores) ? item.scores : '';
                 });
-                const cells = scores.map(sc => '<td style="text-align:center;">'+(sc || '—')+'</td>').join('');
+                const cells = scores.map((sc,i) => '<td data-month="'+colMonths[i]+'" style="text-align:center;">'+(sc || '—')+'</td>').join('');
                 bodyRows += '<tr><td>Ob: '+(objName||'')+'</td>'+cells+'</tr>';
                 exportRows.push(['Ob: ' + (objName||''), ...scores]);
             });
         });
 
-        scoreMatrixExport = { patientName: patient ? patient.name : '', rows: exportRows };
+        scoreMatrixExport = { patientName: patient ? patient.name : '', rows: exportRows, colMonths };
+
+        // Bife pe luni, ca să poți alege rapid ce luni intră în tabel/export
+        const monthOrder = [];
+        colMonths.forEach(m => { if (m && !monthOrder.includes(m)) monthOrder.push(m); });
+        const MONTHS_RO_SHORT = ['Ian','Feb','Mar','Apr','Mai','Iun','Iul','Aug','Sep','Oct','Noi','Dec'];
+        const monthLabel = m => { const p = m.split('-'); return MONTHS_RO_SHORT[parseInt(p[1],10)-1] + ' ' + p[0]; };
+        const monthChips = monthOrder.map(m =>
+            '<label class="month-chip"><input type="checkbox" checked data-month-toggle="'+m+'" onchange="toggleScoreMatrixMonth(this)"> '+monthLabel(m)+'</label>'
+        ).join('');
+        const monthFilterHtml = monthOrder.length > 1
+            ? '<div class="month-filter"><strong style="font-size:0.85rem;">Afișează lunile:</strong> ' + monthChips +
+              ' <button type="button" class="btn-sec" style="padding:2px 10px;font-size:0.78rem;" onclick="toggleAllScoreMatrixMonths(true)">Toate</button>' +
+              ' <button type="button" class="btn-sec" style="padding:2px 10px;font-size:0.78rem;" onclick="toggleAllScoreMatrixMonths(false)">Niciuna</button></div>'
+            : '';
 
         return '<div class="psi-only-panel">' +
             '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">' +
@@ -372,23 +391,54 @@
                 '<button class="btn-nav" style="background:#5d4037;" onclick="exportScoreMatrixExcel()">📊 Export Excel</button>' +
             '</div>' +
             '<h3>Evidență scoruri pe ședințe</h3>' +
+            monthFilterHtml +
             '<div style="overflow-x:auto;">' +
-            '<table class="score-matrix"><thead><tr><th>Nume: '+(patient?patient.name:'')+'</th>'+dateHeaders+'</tr></thead>' +
+            '<table class="score-matrix" id="scoreMatrixTable"><thead><tr><th>Nume: '+(patient?patient.name:'')+'</th>'+dateHeaders+'</tr></thead>' +
             '<tbody>'+bodyRows+'</tbody></table>' +
             '</div></div>';
+    }
+
+    // Arată/ascunde coloanele unei luni în matricea de scoruri, la bifare/debifare
+    function toggleScoreMatrixMonth(checkbox) {
+        const month = checkbox.getAttribute('data-month-toggle');
+        const table = document.getElementById('scoreMatrixTable');
+        if (!table) return;
+        table.querySelectorAll('[data-month="'+month+'"]').forEach(el => {
+            el.style.display = checkbox.checked ? '' : 'none';
+        });
+    }
+
+    function toggleAllScoreMatrixMonths(checked) {
+        document.querySelectorAll('.month-filter input[data-month-toggle]').forEach(cb => {
+            cb.checked = checked;
+            toggleScoreMatrixMonth(cb);
+        });
     }
 
     function exportScoreMatrixExcel() {
         if (!scoreMatrixExport || !scoreMatrixExport.rows.length) { toast('Nu există date de exportat.', '⚠️'); return; }
         if (typeof XLSX === 'undefined') { toast('Biblioteca de export nu s-a încărcat. Reîncarcă pagina.', '❌'); return; }
 
+        // Exportăm doar lunile bifate (dacă există filtru pe ecran)
+        const hiddenMonths = new Set();
+        document.querySelectorAll('.month-filter input[data-month-toggle]').forEach(cb => {
+            if (!cb.checked) hiddenMonths.add(cb.getAttribute('data-month-toggle'));
+        });
+        const colMonths = scoreMatrixExport.colMonths || [];
+        const keepIdx = colMonths.map((m,i) => hiddenMonths.has(m) ? -1 : i).filter(i => i !== -1);
+        const rows = scoreMatrixExport.rows.map(row => {
+            if (row.length <= 1) return row; // rând de titlu domeniu, fără coloane de date
+            const rest = keepIdx.map(i => row[i+1]);
+            return [row[0], ...rest];
+        });
+
         const aoa = [
             ['Nume:', scoreMatrixExport.patientName],
             [],
-            ...scoreMatrixExport.rows
+            ...rows
         ];
         const ws = XLSX.utils.aoa_to_sheet(aoa);
-        ws['!cols'] = [{ wch: 26 }, ...scoreMatrixExport.rows[0].slice(1).map(() => ({ wch: 12 }))];
+        ws['!cols'] = [{ wch: 26 }, ...rows[0].slice(1).map(() => ({ wch: 12 }))];
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Evidenta scoruri');
         const safeName = (scoreMatrixExport.patientName || 'pacient').trim().replace(/[^\w\-]+/g, '_');
@@ -416,27 +466,86 @@
         return out;
     }
 
-    function buildStrategiiRowsHtml(objs, startNr) {
-        let nr = (startNr || 0) + 1;
-        let rows = '';
-        objs.forEach(({catName, item}) => {
-            rows += '<tr>' +
-                '<td style="text-align:center;">'+(nr++)+'</td>' +
-                '<td><b>'+(catName||'')+'</b></td>' +
-                '<td>&nbsp;</td>' +
-                '<td>'+(item.name||'')+'</td>' +
-                '<td style="text-align:center;">'+(item.persoana||'')+'</td>' +
-                '<td>'+(item.detalii_extra||'')+'</td>' +
-                '<td style="text-align:center;">'+(item.locatie||'')+'</td>' +
-            '</tr>';
+    // Grupează obiectivele astfel încât toate rândurile cu același domeniu să fie alăturate,
+    // chiar dacă în fișă apar amestecate din ședințe diferite.
+    function groupObjsByDomain(objs) {
+        const order = [];
+        const map = new Map();
+        objs.forEach(o => {
+            const key = (o.catName || '').trim();
+            if (!map.has(key)) { map.set(key, []); order.push(key); }
+            map.get(key).push(o);
         });
-        return rows;
+        const out = [];
+        order.forEach(key => out.push(...map.get(key)));
+        return out;
+    }
+
+    // Randează un tbody din rânduri "plate" {catName, obOperational, sd, interventie, frecventa},
+    // unind cu rowspan rândurile consecutive care au același domeniu (îl scrie o singură dată).
+    function renderGroupedRows(flatRows, startNr) {
+        let nr = (startNr || 0) + 1;
+        let html = '';
+        for (let i = 0; i < flatRows.length; i++) {
+            const r = flatRows[i];
+            const isGroupStart = (i === 0) || ((flatRows[i-1].catName||'').trim() !== (r.catName||'').trim());
+            const nrText = isGroupStart ? String(nr++) : '';
+            const domainText = isGroupStart ? '<b>'+(r.catName||'')+'</b>' : '';
+            html += '<tr>' +
+                '<td style="text-align:center;">'+nrText+'</td>' +
+                '<td>'+domainText+'</td>' +
+                '<td>'+(r.obOperational||'')+'</td>' +
+                '<td style="text-align:center;">'+(r.sd||'')+'</td>' +
+                '<td>'+(r.interventie||'')+'</td>' +
+                '<td style="text-align:center;">'+(r.frecventa||'')+'</td>' +
+            '</tr>';
+        }
+        return html;
+    }
+
+    function buildStrategiiRowsHtml(objs, startNr) {
+        const grouped = groupObjsByDomain(objs);
+        const flatRows = grouped.map(({catName, item}) => ({
+            catName,
+            obOperational: item.name || '',
+            sd: item.persoana || '',
+            interventie: item.detalii_extra || '',
+            frecventa: item.locatie || ''
+        }));
+        return renderGroupedRows(flatRows, startNr);
+    }
+
+    // Citește un tabel deja randat (cu rowspan pe Domeniu) și îl întoarce în rânduri "plate",
+    // păstrând orice a scris manual psihologul în celule.
+    function flattenStrategiiTable(table) {
+        const tbody = table.querySelector('tbody');
+        const rows = [...tbody.querySelectorAll('tr')];
+        let currentDomain = '';
+        return rows.map(tr => {
+            const tds = [...tr.querySelectorAll('td')];
+            const domainText = tds[1] ? tds[1].textContent.trim() : '';
+            const domain = domainText ? domainText : currentDomain;
+            currentDomain = domain;
+            return {
+                catName: domain,
+                obOperational: tds[2] ? tds[2].innerHTML : '',
+                sd: tds[3] ? tds[3].innerHTML : '',
+                interventie: tds[4] ? tds[4].innerHTML : '',
+                frecventa: tds[5] ? tds[5].innerHTML : ''
+            };
+        });
+    }
+
+    function stripHtml(html) {
+        const d = document.createElement('div');
+        d.innerHTML = html || '';
+        return (d.textContent || '').trim();
     }
 
     function renumberStrategiiTable(table) {
         [...table.querySelectorAll('tbody tr')].forEach((tr, i) => {
             const cells = tr.querySelectorAll('td');
-            if (cells.length >= 7) cells[0].textContent = i + 1;
+            if (cells.length >= 6) cells[0].textContent = i + 1;
         });
     }
 
@@ -451,7 +560,7 @@
         function isCorrectStructure(t) {
             if (!t) return false;
             const ths = [...t.querySelectorAll('thead th')].map(th => th.textContent.trim());
-            return ths.length === 7 && ths[0].startsWith('Nr');
+            return ths.length === 6 && ths[0] && ths[0].startsWith('Nr');
         }
 
         let table = document.getElementById('tabelStrategii');
@@ -464,7 +573,7 @@
         }
 
         if (table && !isCorrectStructure(table)) {
-            if (!confirm('Tabelul "Strategii de Intervenție" din acest document are un format vechi.\n\nÎl înlocuiesc cu formatul nou (Nr. Crt. / Domeniu / Obiectiv general / Ob. operațional / Sd. / Intervenție / Frecvență) și preiau datele din fișă?\n\nAtenție: conținutul scris manual în acel tabel se va pierde.')) return;
+            if (!confirm('Tabelul "Strategii de Intervenție" din acest document are un format vechi.\n\nÎl înlocuiesc cu formatul nou (Nr. Crt. / Ob. general / Ob. operațional / Sd. / Recomandări acasă / Frecvență) și preiau datele din fișă?\n\nAtenție: conținutul scris manual în acel tabel se va pierde.')) return;
             table.remove();
             table = null;
         }
@@ -472,10 +581,10 @@
         if (!table) {
             const newTableHtml =
                 '<table id="tabelStrategii"><thead><tr>' +
-                    '<th style="width:6%">Nr. Crt.</th><th style="width:14%">Domeniu</th>' +
-                    '<th style="width:18%">Obiectiv general</th><th style="width:20%">Ob. operațional</th>' +
-                    '<th style="width:8%">Sd.</th><th style="width:20%">Intervenție</th>' +
-                    '<th style="width:14%">Frecvență</th>' +
+                    '<th style="width:6%">Nr. Crt.</th><th style="width:18%">Ob. general</th>' +
+                    '<th style="width:28%">Ob. operațional</th>' +
+                    '<th style="width:8%">Sd.</th><th style="width:24%">Recomandări acasă</th>' +
+                    '<th style="width:16%">Frecvență</th>' +
                 '</tr></thead><tbody>' + buildStrategiiRowsHtml(objs) + '</tbody></table>';
 
             const heading = [...paper.querySelectorAll('h2')].find(h => h.textContent.trim() === 'Strategii de Intervenție');
@@ -488,21 +597,35 @@
             return;
         }
 
-        // Tabel corect existent → adăugăm doar obiectivele lipsă, păstrăm rândurile și completările existente
+        // Tabel corect existent → citim rândurile așa cum sunt (inclusiv completările manuale),
+        // adăugăm doar obiectivele lipsă lângă domeniul lor, apoi regrupăm tot tabelul pe domenii.
         const tbody = table.querySelector('tbody');
-        const existingKeys = new Set();
-        [...tbody.querySelectorAll('tr')].forEach(tr => {
-            const tds = tr.querySelectorAll('td');
-            if (tds.length < 4) return;
-            existingKeys.add(tds[1].textContent.trim() + '|||' + tds[3].textContent.trim());
-        });
+        const flatRows = flattenStrategiiTable(table);
+        const existingKeys = new Set(flatRows.map(r => (r.catName||'').trim() + '|||' + stripHtml(r.obOperational)));
 
         const missing = objs.filter(o => !existingKeys.has((o.catName||'').trim() + '|||' + (o.item.name||'').trim()));
         if (!missing.length) { toast('Tabelul e deja la zi cu fișa individuală. ✅'); return; }
 
-        tbody.insertAdjacentHTML('beforeend', buildStrategiiRowsHtml(missing, tbody.querySelectorAll('tr').length));
-        renumberStrategiiTable(table);
-        toast(missing.length + ' obiectiv(e) nou(i) adăugat(e) în tabel! ✅');
+        // Fiecare obiectiv nou intră lângă ultimul rând existent din domeniul lui,
+        // nu la finalul tabelului — dacă domeniul e complet nou, se adaugă la final.
+        missing.forEach(o => {
+            const newRow = {
+                catName: o.catName,
+                obOperational: o.item.name || '',
+                sd: o.item.persoana || '',
+                interventie: o.item.detalii_extra || '',
+                frecventa: o.item.locatie || ''
+            };
+            let lastIdx = -1;
+            for (let i = 0; i < flatRows.length; i++) {
+                if ((flatRows[i].catName||'').trim() === (o.catName||'').trim()) lastIdx = i;
+            }
+            if (lastIdx !== -1) flatRows.splice(lastIdx + 1, 0, newRow);
+            else flatRows.push(newRow);
+        });
+
+        tbody.innerHTML = renderGroupedRows(flatRows, 0);
+        toast(missing.length + ' obiectiv(e) nou(i) adăugat(e) în categoria lor din tabel! ✅');
     }
 
     function buildEditor(patient, html, fisaData) {
@@ -531,11 +654,11 @@
                 '<p><strong>Tratament medicamentos:</strong> ..........</p><br>' +
                 '<h2>Strategii de Intervenție</h2>' +
                 '<table id="tabelStrategii"><thead><tr>' +
-                    '<th style="width:6%">Nr. Crt.</th><th style="width:14%">Domeniu</th>' +
-                    '<th style="width:18%">Obiectiv general</th><th style="width:20%">Ob. operațional</th>' +
-                    '<th style="width:8%">Sd.</th><th style="width:20%">Intervenție</th>' +
-                    '<th style="width:14%">Frecvență</th>' +
-                '</tr></thead><tbody>' + (rows || '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>') + '</tbody></table><br>' +
+                    '<th style="width:6%">Nr. Crt.</th><th style="width:18%">Ob. general</th>' +
+                    '<th style="width:28%">Ob. operațional</th>' +
+                    '<th style="width:8%">Sd.</th><th style="width:24%">Recomandări acasă</th>' +
+                    '<th style="width:16%">Frecvență</th>' +
+                '</tr></thead><tbody>' + (rows || '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>') + '</tbody></table><br>' +
                 '<h2>Obiective și recomandări</h2>' +
                 '<p>Introduceți aici obiectivele și recomandările...</p>';
         }
@@ -731,7 +854,7 @@
         if (btn) { btn.textContent = '⏳...'; btn.disabled = true; }
 
         const opt = {
-            margin: [12, 15, 12, 15],
+            margin: [0, 0, 0, 0],
             filename: 'Plan_Interventie.pdf',
             image: { type: 'jpeg', quality: 0.97 },
             html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
