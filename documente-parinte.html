@@ -119,6 +119,50 @@
         .month-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; background: #fff; border: 1px solid #e3cfa0; border-radius: 12px; padding: 3px 10px; cursor: pointer; user-select: none; }
         .month-chip input { accent-color: #d7a24a; cursor: pointer; }
 
+        /* ISTORIC VERSIUNI PLAN */
+        .v-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        .v-item {
+            display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+            background: #fff; border: 1px solid #e3cfa0; border-radius: 10px; padding: 9px 13px;
+        }
+        .v-item > div:first-child { flex: 1 1 210px; min-width: 0; }
+        .v-when { font-weight: 700; font-size: 0.87rem; color: #5a4324; }
+        .v-meta { font-size: 0.76rem; color: #a68b5b; margin-top: 1px; }
+        .v-tag  { background: #f4e3c1; border-radius: 10px; padding: 2px 9px; font-size: 0.7rem; font-weight: 700; margin-left: 6px; }
+        .v-actions { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+        .btn-v {
+            background: #8d6e63; color: #fff; border: 1px solid transparent; border-radius: 6px;
+            padding: 4px 11px; font-family: 'Quicksand', sans-serif; font-weight: 700;
+            font-size: 0.76rem; cursor: pointer; transition: 0.15s; white-space: nowrap;
+        }
+        .btn-v:hover  { background: #6d4c41; }
+        .btn-v.ghost  { background: #fff; color: #8d6e63; border-color: #d7b98a; }
+        .btn-v.ghost:hover  { background: #f8efe0; }
+        .btn-v.danger { background: #fff; color: #c62828; border-color: #eabdbd; }
+        .btn-v.danger:hover { background: #fdeeee; }
+        .v-empty { font-size: 0.85rem; color: #a68b5b; }
+        .v-sql {
+            background: #3e2723; color: #f6e7c8; border-radius: 8px; margin-top: 9px;
+            font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.72rem;
+            line-height: 1.55; padding: 12px 14px; white-space: pre; overflow-x: auto;
+        }
+
+        /* Modal previzualizare versiune */
+        .v-modal {
+            position: fixed; inset: 0; z-index: 500; background: rgba(34,22,15,.66);
+            display: block; padding: 16px 10px 40px; overflow-y: auto;
+        }
+        .v-modal-bar {
+            position: sticky; top: 0; z-index: 2;
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+            background: #3e2723; color: #fff; border-radius: 10px;
+            padding: 9px 13px; margin: 0 auto 14px; width: 210mm; max-width: 100%;
+            box-shadow: 0 4px 16px rgba(0,0,0,.3);
+        }
+        .v-modal-title { font-weight: 700; font-size: 0.85rem; margin-right: auto; }
+        /* height auto + margin auto: documentul crește cât e nevoie, nu e strivit de înălțimea ecranului */
+        .v-modal .paper { margin: 0 auto; max-width: 100%; height: auto; }
+
         /* Loading */
         .loading { display: flex; align-items: center; justify-content: center; min-height: 60vh; color: #666; font-size: 1.1rem; gap: 10px; }
 
@@ -307,7 +351,8 @@
             '<a class="btn-nav" href="fisa-notare.html">← Participanți</a>' +
             '<span class="nav-title" id="ntitle">Plan de intervenție</span>';
         document.getElementById('navRight').innerHTML =
-            '<button class="btn-nav" style="background:#8d6e63;" onclick="regenerateStrategiiTable()">🔄 Sincronizează tabel</button>' +
+            '<button class="btn-nav" title="Aduce tabelul Strategii exact la obiectivele din ultima ședință" onclick="regenerateStrategiiTable()" style="background:#8d6e63;">🔄 Sincronizează tabel</button>' +
+            '<button class="btn-nav" title="Versiunile salvate ale planului" onclick="scrollLaIstoric()">🕘 Istoric</button>' +
             '<button class="btn-nav save" onclick="savePlan()">💾 Salvează</button>' +
             '<button class="btn-nav pdf" id="btnPdfPsi" onclick="exportPDF()">🖨️ PDF</button>';
 
@@ -318,9 +363,18 @@
         ]);
 
         if (patient) document.getElementById('ntitle').textContent = 'Plan — ' + patient.name;
+        currentPatientName = patient ? patient.name : '';
 
         if (plan) planId = plan.id;
         buildEditor(patient, plan ? plan.html_content : null, fisa ? fisa.data : null);
+
+        // Istoricul versiunilor
+        ultimaVersiuneSalvata = (plan && plan.html_content) ? plan.html_content : '';
+        await loadPlanVersions();
+        // Planul exista deja înainte de istoric → îl arhivăm o dată, ca punct de pornire
+        if (!versiuniIndisponibile && !planVersions.length && plan && plan.html_content) {
+            await savePlanVersion(plan.html_content, 'starea planului la pornirea istoricului');
+        }
     }
 
     /* ── MATRICE SCORURI (vizibilă doar psihologului, nu se salvează în plan) ── */
@@ -446,24 +500,50 @@
         toast('Fișierul Excel a fost descărcat! ✅');
     }
 
-    /* ── OBIECTIVE DIN FIȘĂ (unite din toate ședințele, nu doar prima) ── */
-    function collectAllObjectives(fisaData) {
-        if (!fisaData || !fisaData.length) return [];
+    /* ── OBIECTIVE DIN FIȘĂ — EXACT DIN ULTIMA ȘEDINȚĂ ──────────────────────────
+       Tabelul "Strategii de Intervenție" oglindește ultima ședință individuală:
+       aceleași domenii, aceleași obiective, aceeași ordine, aceleași valori.
+       Obiectivele lucrate în ședințe mai vechi, dar care nu mai apar în ultima,
+       nu mai intră în plan. Categoriile arhivate în fișă nu apar (sunt finalizate). */
+
+    // true  → textul scris de mână în plan rămâne acolo unde ultima ședință are câmpul gol
+    // false → copiere 1:1 din ultima ședință (câmp gol în fișă = celulă goală în plan)
+    const PASTREAZA_TEXTUL_MANUAL = true;
+
+    function getUltimaSedinta(fisaData) {
+        if (!fisaData || !fisaData.length) return null;
+        // format vechi: fisaData e deja o listă de categorii → o tratăm ca pe o singură ședință
         if (fisaData[0] && fisaData[0].catName !== undefined) {
-            // format vechi: fisaData e deja o listă de categorii
-            const out = [];
-            fisaData.forEach(c => (c.subItems||[]).forEach(it => out.push({ catName: c.catName, item: it })));
-            return out;
+            return { date: null, categories: fisaData };
         }
-        const seenKeys = new Set();
+        const sortate = [...fisaData].sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+        // Cea mai recentă ședință care are obiective: o ședință abia creată, încă goală,
+        // nu golește planul părintelui.
+        for (let i = sortate.length - 1; i >= 0; i--) {
+            const areObiective = (sortate[i].categories || []).some(c => (c.subItems || []).length);
+            if (areObiective) return sortate[i];
+        }
+        return null;
+    }
+
+    function collectAllObjectives(fisaData) {
+        const s = getUltimaSedinta(fisaData);
+        if (!s) return [];
         const out = [];
-        fisaData.forEach(s => (s.categories||[]).forEach(cat => {
-            (cat.subItems||[]).forEach(item => {
-                const key = (cat.catName||'') + '|||' + (item.name||'');
-                if (!seenKeys.has(key)) { seenKeys.add(key); out.push({ catName: cat.catName, item }); }
-            });
+        (s.categories || []).forEach(cat => (cat.subItems || []).forEach(item => {
+            out.push({ catName: cat.catName, item });
         }));
         return out;
+    }
+
+    function dataSedintei(s) {
+        if (!s || !s.date) return '';
+        const d = new Date(s.date);
+        return isNaN(d) ? '' : d.toLocaleDateString('ro-RO');
+    }
+
+    function cheieObiectiv(domeniu, obiectiv) {
+        return (domeniu || '').trim() + '|||' + (obiectiv || '').trim();
     }
 
     // Grupează obiectivele astfel încât toate rândurile cu același domeniu să fie alăturate,
@@ -549,12 +629,15 @@
         });
     }
 
-    /* ── SINCRONIZARE TABEL cu fișa individuală (fără să șteargă completările manuale) ── */
+    /* ── SINCRONIZARE TABEL: oglindă exactă a ultimei ședințe din fișa individuală ── */
     async function regenerateStrategiiTable() {
         if (!currentPatientId) return;
         const { data: fisa } = await _supabase.from('fisa_data').select('data').eq('patient_id', currentPatientId).maybeSingle();
-        const objs = collectAllObjectives(fisa ? fisa.data : null);
-        if (!objs.length) { toast('Nu există date în fișa individuală a acestui copil.', 'ℹ️'); return; }
+        const fisaData = fisa ? fisa.data : null;
+        const ultimaSedinta = getUltimaSedinta(fisaData);
+        const dataUltimei = dataSedintei(ultimaSedinta);
+        const objs = collectAllObjectives(fisaData);
+        if (!objs.length) { toast('Ultima ședință din fișa acestui copil nu are obiective.', 'ℹ️'); return; }
         if (!paper) { toast('Documentul nu este încărcat.', '⚠️'); return; }
 
         function isCorrectStructure(t) {
@@ -573,7 +656,7 @@
         }
 
         if (table && !isCorrectStructure(table)) {
-            if (!confirm('Tabelul "Strategii de Intervenție" din acest document are un format vechi.\n\nÎl înlocuiesc cu formatul nou (Nr. Crt. / Ob. general / Ob. operațional / Sd. / Recomandări acasă / Frecvență) și preiau datele din fișă?\n\nAtenție: conținutul scris manual în acel tabel se va pierde.')) return;
+            if (!confirm('Tabelul "Strategii de Intervenție" din acest document are un format vechi.\n\nÎl înlocuiesc cu formatul nou (Nr. Crt. / Ob. general / Ob. operațional / Sd. / Recomandări acasă / Frecvență) și preiau obiectivele din ultima ședință' + (dataUltimei ? ' (' + dataUltimei + ')' : '') + '?\n\nAtenție: conținutul scris manual în acel tabel se va pierde.')) return;
             table.remove();
             table = null;
         }
@@ -593,39 +676,85 @@
             } else {
                 paper.insertAdjacentHTML('beforeend', '<h2>Strategii de Intervenție</h2>' + newTableHtml + '<br>');
             }
-            toast('Tabelul a fost creat și completat din fișă! ✅');
+            toast('Tabel creat din ședința' + (dataUltimei ? ' din ' + dataUltimei : ' cea mai recentă') + '. ✅');
             return;
         }
 
-        // Tabel corect existent → citim rândurile așa cum sunt (inclusiv completările manuale),
-        // adăugăm doar obiectivele lipsă lângă domeniul lor, apoi regrupăm tot tabelul pe domenii.
+        // Tabel corect existent → îl reconstruim exact ca ultima ședință:
+        // aceleași rânduri, în aceeași ordine. Ce nu mai apare în ultima ședință iese din tabel.
         const tbody = table.querySelector('tbody');
-        const flatRows = flattenStrategiiTable(table);
-        const existingKeys = new Set(flatRows.map(r => (r.catName||'').trim() + '|||' + stripHtml(r.obOperational)));
+        const randuriVechi = flattenStrategiiTable(table);
 
-        const missing = objs.filter(o => !existingKeys.has((o.catName||'').trim() + '|||' + (o.item.name||'').trim()));
-        if (!missing.length) { toast('Tabelul e deja la zi cu fișa individuală. ✅'); return; }
-
-        // Fiecare obiectiv nou intră lângă ultimul rând existent din domeniul lui,
-        // nu la finalul tabelului — dacă domeniul e complet nou, se adaugă la final.
-        missing.forEach(o => {
-            const newRow = {
-                catName: o.catName,
-                obOperational: o.item.name || '',
-                sd: o.item.persoana || '',
-                interventie: o.item.detalii_extra || '',
-                frecventa: o.item.locatie || ''
-            };
-            let lastIdx = -1;
-            for (let i = 0; i < flatRows.length; i++) {
-                if ((flatRows[i].catName||'').trim() === (o.catName||'').trim()) lastIdx = i;
-            }
-            if (lastIdx !== -1) flatRows.splice(lastIdx + 1, 0, newRow);
-            else flatRows.push(newRow);
+        const vechiDupaCheie = new Map();
+        randuriVechi.forEach(r => {
+            const cheie = cheieObiectiv(r.catName, stripHtml(r.obOperational));
+            if (!vechiDupaCheie.has(cheie)) vechiDupaCheie.set(cheie, r);
         });
 
-        tbody.innerHTML = renderGroupedRows(flatRows, 0);
-        toast(missing.length + ' obiectiv(e) nou(i) adăugat(e) în categoria lor din tabel! ✅');
+        // Valoarea din ultima ședință comandă; unde ședința e goală, putem păstra ce e scris de mână.
+        const valoare = (dinSedinta, dinTabel) => {
+            if (dinSedinta) return dinSedinta;
+            if (PASTREAZA_TEXTUL_MANUAL && dinTabel && stripHtml(dinTabel)) return dinTabel;
+            return '';
+        };
+
+        const folosite = new Set();
+        let adaugate = 0, actualizate = 0;
+
+        const randuriNoi = groupObjsByDomain(objs).map(({ catName, item }) => {
+            const cheie = cheieObiectiv(catName, item.name);
+            const vechi = vechiDupaCheie.get(cheie);
+            folosite.add(cheie);
+
+            const rand = {
+                catName: catName || '',
+                // păstrăm formatarea existentă a obiectivului (bold, italic etc.), textul e identic
+                obOperational: vechi ? vechi.obOperational : (item.name || ''),
+                sd:          valoare(item.persoana || '',      vechi ? vechi.sd : ''),
+                interventie: valoare(item.detalii_extra || '', vechi ? vechi.interventie : ''),
+                frecventa:   valoare(item.locatie || '',       vechi ? vechi.frecventa : '')
+            };
+
+            if (!vechi) adaugate++;
+            else if (stripHtml(vechi.sd) !== stripHtml(rand.sd) ||
+                     stripHtml(vechi.interventie) !== stripHtml(rand.interventie) ||
+                     stripHtml(vechi.frecventa) !== stripHtml(rand.frecventa)) actualizate++;
+
+            return rand;
+        });
+
+        const deSters = randuriVechi.filter(r => !folosite.has(cheieObiectiv(r.catName, stripHtml(r.obOperational))));
+
+        const cheiVechi = randuriVechi.map(r => cheieObiectiv(r.catName, stripHtml(r.obOperational))).join('###');
+        const cheiNoi   = randuriNoi.map(r => cheieObiectiv(r.catName, stripHtml(r.obOperational))).join('###');
+        const ordineSchimbata = cheiVechi !== cheiNoi;
+
+        if (!adaugate && !actualizate && !deSters.length && !ordineSchimbata) {
+            toast('Tabelul e deja identic cu ultima ședință' + (dataUltimei ? ' (' + dataUltimei + ')' : '') + '. ✅');
+            return;
+        }
+
+        if (deSters.length) {
+            const lista = deSters.slice(0, 12)
+                .map(r => '• ' + (stripHtml(r.catName) ? stripHtml(r.catName) + ' — ' : '') + (stripHtml(r.obOperational) || '(rând gol)'))
+                .join('\n');
+            const rest = deSters.length > 12 ? '\n…și încă ' + (deSters.length - 12) : '';
+            const ok = confirm(
+                'Tabelul va oglindi exact ultima ședință' + (dataUltimei ? ' din ' + dataUltimei : '') + '.\n\n' +
+                'Ies din tabel ' + deSters.length + ' rând(uri) care nu mai apar în ea:\n' + lista + rest + '\n\n' +
+                'Textul scris manual pe aceste rânduri se pierde. Continui?'
+            );
+            if (!ok) return;
+        }
+
+        tbody.innerHTML = renderGroupedRows(randuriNoi, 0);
+
+        const parti = [];
+        if (adaugate) parti.push(adaugate + ' rând(uri) adăugat(e)');
+        if (actualizate) parti.push(actualizate + ' actualizat(e)');
+        if (deSters.length) parti.push(deSters.length + ' eliminat(e)');
+        if (!parti.length) parti.push('ordinea rândurilor adusă la zi');
+        toast('Tabel sincronizat cu ședința' + (dataUltimei ? ' din ' + dataUltimei : '') + ': ' + parti.join(', ') + '. ✅');
     }
 
     function buildEditor(patient, html, fisaData) {
@@ -665,6 +794,7 @@
 
         document.getElementById('appContent').innerHTML =
             '<div class="doc-zone"><div class="paper" id="editablePaper" contenteditable="true" spellcheck="true">'+html+'</div>' +
+            buildVersionsPanel() +
             buildScoreMatrix(patient, fisaData) +
             '</div>';
 
@@ -690,6 +820,7 @@
 
     async function savePlan() {
         if (!paper) return;
+        if (exportInCurs) { toast('Se pregătește un PDF chiar acum. Încearcă din nou în câteva secunde.', 'ℹ️'); return; }
         const html = paper.innerHTML;
         let res;
         if (planId) {
@@ -699,7 +830,295 @@
             if (ins.data) planId = ins.data.id;
             res = ins;
         }
-        res && res.error ? toast('Eroare: '+res.error.message, '❌') : toast('Planul a fost salvat și trimis părintelui! ✅');
+
+        if (res && res.error) { toast('Eroare: ' + res.error.message, '❌'); return; }
+
+        // Fiecare salvare rămâne în istoric (dacă textul chiar s-a schimbat)
+        const versiuneNoua = (html !== ultimaVersiuneSalvata) ? await savePlanVersion(html) : false;
+        toast(versiuneNoua
+            ? 'Salvat, trimis părintelui și adăugat în istoric. ✅'
+            : 'Planul a fost salvat și trimis părintelui! ✅');
+    }
+
+    /* ═══════════════════════════════════
+       ISTORIC VERSIUNI PLAN (doar psiholog)
+       Fiecare salvare a planului se arhivează în tabelul plan_versions.
+    ═══════════════════════════════════ */
+
+    const SQL_PLAN_VERSIONS =
+'create table if not exists public.plan_versions (\n' +
+'  id uuid primary key default gen_random_uuid(),\n' +
+'  patient_id uuid not null,\n' +
+'  html_content text not null,\n' +
+'  note text,\n' +
+'  created_at timestamptz not null default now()\n' +
+');\n\n' +
+'create index if not exists plan_versions_patient_idx\n' +
+'  on public.plan_versions (patient_id, created_at desc);\n\n' +
+'alter table public.plan_versions enable row level security;\n\n' +
+'create policy "plan_versions_all" on public.plan_versions\n' +
+'  for all to anon, authenticated using (true) with check (true);';
+
+    let planVersions = [];              // doar id + dată + notă; conținutul se ia la cerere
+    let ultimaVersiuneSalvata = '';     // ca să nu arhivăm de două ori același text
+    let currentPatientName = '';
+    let versiuniIndisponibile = false;  // tabelul plan_versions nu există încă
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function tabelulLipseste(err) {
+        const m = ((err && err.message) || '') + ' ' + ((err && err.code) || '');
+        return /does not exist|could not find the table|schema cache|42P01|PGRST205/i.test(m);
+    }
+
+    function momentVersiune(iso) {
+        const d = new Date(iso);
+        if (isNaN(d)) return '—';
+        return d.toLocaleDateString('ro-RO', { day:'2-digit', month:'long', year:'numeric' }) +
+               ', ora ' + d.toLocaleTimeString('ro-RO', { hour:'2-digit', minute:'2-digit' });
+    }
+
+    function numeFisierVersiune(v, ext) {
+        const d = new Date(v.created_at);
+        const p = n => String(n).padStart(2, '0');
+        const stamp = isNaN(d) ? 'versiune'
+            : d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) + '_' + p(d.getHours()) + '-' + p(d.getMinutes());
+        const nume = (currentPatientName || 'pacient').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .trim().replace(/[^\w\-]+/g, '_');
+        return 'Plan_' + nume + '_' + stamp + '.' + ext;
+    }
+
+    // Notă scurtă afișată sub dată, ca să recunoști versiunea fără să o deschizi
+    function rezumatPlan(html) {
+        const d = document.createElement('div');
+        d.innerHTML = html || '';
+        const t = d.querySelector('#tabelStrategii') || d.querySelector('table');
+        const n = t ? t.querySelectorAll('tbody tr').length : 0;
+        return n ? ('Strategii de intervenție: ' + n + ' rând(uri)') : 'Fără tabel de strategii';
+    }
+
+    function buildVersionsPanel() {
+        return '<div class="psi-only-panel" id="versionsPanel">' +
+            '<span class="psi-only-badge">🔒 Vizibil doar pentru psiholog — nu apare în planul trimis părintelui</span>' +
+            '<h3>Istoricul planului</h3>' +
+            '<p style="font-size:.82rem;color:#a68b5b;margin-top:3px;">Fiecare salvare rămâne aici. Poți deschide o versiune veche, o poți descărca în PDF sau Word, sau o poți readuce în editor.</p>' +
+            '<div class="v-list" id="versionsList"><p class="v-empty">Se încarcă istoricul…</p></div>' +
+        '</div>';
+    }
+
+    async function loadPlanVersions() {
+        const box = document.getElementById('versionsList');
+        const { data, error } = await _supabase.from('plan_versions')
+            .select('id, created_at, note')
+            .eq('patient_id', currentPatientId)
+            .order('created_at', { ascending: false })
+            .limit(100);
+
+        if (error) {
+            versiuniIndisponibile = tabelulLipseste(error);
+            if (box) box.innerHTML = versiuniIndisponibile
+                ? htmlSetupSQL()
+                : '<p class="v-empty">Nu am putut încărca istoricul: ' + esc(error.message) + '</p>';
+            return;
+        }
+
+        versiuniIndisponibile = false;
+        planVersions = data || [];
+        renderVersionsList();
+    }
+
+    function renderVersionsList() {
+        const box = document.getElementById('versionsList');
+        if (!box) return;
+
+        if (!planVersions.length) {
+            box.innerHTML = '<p class="v-empty">Nicio versiune încă. La prima apăsare pe „💾 Salvează", planul de acum intră în istoric.</p>';
+            return;
+        }
+
+        box.innerHTML = planVersions.map((v, i) =>
+            '<div class="v-item">' +
+                '<div>' +
+                    '<div class="v-when">' + momentVersiune(v.created_at) +
+                        (i === 0 ? '<span class="v-tag">versiunea trimisă părintelui</span>' : '') + '</div>' +
+                    (v.note ? '<div class="v-meta">' + esc(v.note) + '</div>' : '') +
+                '</div>' +
+                '<div class="v-actions">' +
+                    '<button class="btn-v ghost" onclick="previewVersion(\'' + v.id + '\')">👁 Vezi</button>' +
+                    '<button class="btn-v" onclick="downloadVersionPDF(\'' + v.id + '\')">⬇ PDF</button>' +
+                    '<button class="btn-v ghost" onclick="downloadVersionWord(\'' + v.id + '\')">⬇ Word</button>' +
+                    '<button class="btn-v ghost" onclick="restoreVersion(\'' + v.id + '\')">♻ Readu în editor</button>' +
+                    '<button class="btn-v danger" onclick="deleteVersion(\'' + v.id + '\')" title="Șterge versiunea">🗑</button>' +
+                '</div>' +
+            '</div>'
+        ).join('');
+    }
+
+    async function savePlanVersion(html, notaExtra) {
+        if (versiuniIndisponibile) return false;
+        const note = rezumatPlan(html) + (notaExtra ? ' — ' + notaExtra : '');
+        const { error } = await _supabase.from('plan_versions')
+            .insert([{ patient_id: currentPatientId, html_content: html, note: note }]);
+
+        if (error) {
+            versiuniIndisponibile = tabelulLipseste(error);
+            const box = document.getElementById('versionsList');
+            if (versiuniIndisponibile && box) box.innerHTML = htmlSetupSQL();
+            else if (box) toast('Planul e salvat, dar nu a intrat în istoric: ' + error.message, '⚠️');
+            return false;
+        }
+
+        ultimaVersiuneSalvata = html;
+        await loadPlanVersions();
+        return true;
+    }
+
+    async function fetchVersion(id) {
+        const { data, error } = await _supabase.from('plan_versions').select('*').eq('id', id).maybeSingle();
+        if (error || !data) { toast('Nu am putut încărca versiunea.', '❌'); return null; }
+        return data;
+    }
+
+    function closeVersionModal() {
+        const m = document.getElementById('vModal');
+        if (m) m.remove();
+        document.removeEventListener('keydown', escInchideModal);
+    }
+    function escInchideModal(e) { if (e.key === 'Escape') closeVersionModal(); }
+
+    async function previewVersion(id) {
+        const v = await fetchVersion(id);
+        if (!v) return;
+        closeVersionModal();
+
+        const wrap = document.createElement('div');
+        wrap.className = 'v-modal';
+        wrap.id = 'vModal';
+        wrap.onclick = e => { if (e.target === wrap) closeVersionModal(); };
+        wrap.innerHTML =
+            '<div class="v-modal-bar">' +
+                '<span class="v-modal-title">Versiune din ' + momentVersiune(v.created_at) + '</span>' +
+                '<button class="btn-v" onclick="downloadVersionPDF(\'' + v.id + '\')">⬇ PDF</button>' +
+                '<button class="btn-v ghost" onclick="downloadVersionWord(\'' + v.id + '\')">⬇ Word</button>' +
+                '<button class="btn-v ghost" onclick="restoreVersion(\'' + v.id + '\')">♻ Readu în editor</button>' +
+                '<button class="btn-v ghost" onclick="closeVersionModal()">✕ Închide</button>' +
+            '</div>' +
+            '<div class="paper" id="vPaper"></div>';
+        document.body.appendChild(wrap);
+
+        const vp = document.getElementById('vPaper');
+        vp.innerHTML = v.html_content || '';
+        vp.querySelectorAll('[contenteditable]').forEach(el => el.contentEditable = 'false');
+        document.addEventListener('keydown', escInchideModal);
+    }
+
+    async function downloadVersionPDF(id) {
+        const v = await fetchVersion(id);
+        if (!v) return;
+        if (!paper) { toast('Documentul nu este încărcat.', '⚠️'); return; }
+        if (exportInCurs) { toast('Un export e deja în lucru.', 'ℹ️'); return; }
+
+        // Randăm versiunea chiar în foaia din editor: e singurul element cu lățime,
+        // stiluri și poziție reale. Un element ascuns în afara ecranului iese pagină albă.
+        exportInCurs = true;
+        const continutCurent = paper.innerHTML;
+        const scrollInitial = window.scrollY;
+
+        paper.innerHTML = v.html_content || '';
+        window.scrollTo(0, 0);
+        toast('Se pregătește PDF-ul…', '⏳');
+        await asteptaRandare();
+
+        try {
+            await html2pdf().set(optiuniPDF(numeFisierVersiune(v, 'pdf'))).from(paper).save();
+            toast('PDF descărcat. ✅');
+        } catch (e) {
+            toast('Eroare la export: ' + e.message, '❌');
+        } finally {
+            paper.innerHTML = continutCurent;
+            window.scrollTo(0, scrollInitial);
+            exportInCurs = false;
+        }
+    }
+
+    async function downloadVersionWord(id) {
+        const v = await fetchVersion(id);
+        if (!v) return;
+        const doc =
+            '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
+            '<head><meta charset="utf-8"><title>Plan de intervenție</title><style>' +
+            '@page { size: A4; margin: 20mm 18mm; }' +
+            'body { font-family: "Times New Roman", serif; font-size: 13pt; line-height: 1.6; }' +
+            'h1 { font-size: 20pt; text-align: center; text-transform: uppercase; }' +
+            'h2 { font-size: 15pt; border-bottom: 1px solid #aaa; padding-bottom: 3px; }' +
+            'h3 { font-size: 12pt; }' +
+            'table { border-collapse: collapse; width: 100%; font-size: 11pt; }' +
+            'td, th { border: 1px solid #000; padding: 6px 8px; vertical-align: top; }' +
+            'th { background: #f0f0f0; font-weight: bold; text-align: center; }' +
+            '</style></head><body>' + (v.html_content || '') + '</body></html>';
+        descarcaFisier(doc, numeFisierVersiune(v, 'doc'), 'application/msword');
+    }
+
+    function descarcaFisier(continut, nume, tip) {
+        const blob = new Blob(['\ufeff' + continut], { type: tip + ';charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = nume;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+        toast('Fișier descărcat: ' + nume, '⬇️');
+    }
+
+    async function restoreVersion(id) {
+        const v = await fetchVersion(id);
+        if (!v) return;
+        if (!paper) { toast('Documentul nu este încărcat.', '⚠️'); return; }
+
+        const cand = momentVersiune(v.created_at);
+        const ok = confirm(
+            'Readuc în editor versiunea din ' + cand + '?\n\n' +
+            'Ce ai acum pe ecran și nu ai salvat se pierde. Versiunile din istoric rămân toate.\n\n' +
+            'După restaurare apasă „💾 Salvează" ca părintele să vadă această variantă.'
+        );
+        if (!ok) return;
+
+        closeVersionModal();
+        paper.innerHTML = v.html_content || '';
+        paper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        toast('Versiunea din ' + cand + ' e în editor. Apasă „💾 Salvează" ca să o trimiți părintelui.', '♻️');
+    }
+
+    async function deleteVersion(id) {
+        const v = planVersions.find(x => x.id === id);
+        const cand = v ? momentVersiune(v.created_at) : 'aceasta';
+        if (!confirm('Ștergi definitiv versiunea din ' + cand + '?\n\nNu se mai poate recupera.')) return;
+
+        const { error } = await _supabase.from('plan_versions').delete().eq('id', id);
+        if (error) { toast('Eroare: ' + error.message, '❌'); return; }
+        toast('Versiune ștearsă din istoric.', '🗑');
+        await loadPlanVersions();
+    }
+
+    function scrollLaIstoric() {
+        const p = document.getElementById('versionsPanel');
+        if (p) p.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function htmlSetupSQL() {
+        return '<p class="v-empty"><b>Istoricul are nevoie de un tabel nou în Supabase.</b><br>' +
+            'Deschide Supabase → SQL Editor, rulează o singură dată scriptul de mai jos, apoi reîncarcă pagina. ' +
+            'Dacă în tabelul <b>patients</b> coloana <b>id</b> nu e de tip uuid, ci număr, schimbă în script <b>patient_id uuid</b> în <b>patient_id bigint</b>.</p>' +
+            '<div class="v-sql">' + esc(SQL_PLAN_VERSIONS) + '</div>' +
+            '<div style="margin-top:9px;"><button class="btn-v" onclick="copiazaSQL()">📋 Copiază scriptul</button></div>';
+    }
+
+    function copiazaSQL() {
+        navigator.clipboard.writeText(SQL_PLAN_VERSIONS)
+            .then(() => toast('Script copiat. Rulează-l în Supabase → SQL Editor.', '📋'))
+            .catch(() => toast('Selectează textul din casetă și copiază-l manual.', 'ℹ️'));
     }
 
     /* ═══════════════════════════════════
@@ -846,26 +1265,48 @@
     }
 
     /* ── EXPORT PDF COMPLET (tot documentul, nu doar ecranul) ── */
+    let exportInCurs = false;
+
+    // html2canvas fotografiază pagina de la poziția curentă de scroll: dacă ești
+    // derulat în jos (de exemplu la istoric), iese o pagină albă. De aceea urcăm la 0.
+    function optiuniPDF(filename) {
+        return {
+            margin: [0, 0, 0, 0],
+            filename: filename,
+            image: { type: 'jpeg', quality: 0.97 },
+            html2canvas: { scale: 2, useCORS: true, scrollX: -window.scrollX, scrollY: -window.scrollY },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+    }
+
+    // Lăsăm browserul să așeze textul (și fonturile) înainte de fotografie
+    async function asteptaRandare() {
+        if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (e) {} }
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        await new Promise(r => setTimeout(r, 120));
+    }
+
     async function exportPDF() {
         const el = document.querySelector('.paper') || document.querySelector('.p-planbox');
         if (!el) { toast('Nu există conținut de exportat.', '⚠️'); return; }
+        if (exportInCurs) { toast('Un export e deja în lucru.', 'ℹ️'); return; }
 
         const btn = document.getElementById('btnPdfPsi') || document.getElementById('btnPdfP');
         if (btn) { btn.textContent = '⏳...'; btn.disabled = true; }
 
-        const opt = {
-            margin: [0, 0, 0, 0],
-            filename: 'Plan_Interventie.pdf',
-            image: { type: 'jpeg', quality: 0.97 },
-            html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-        };
+        exportInCurs = true;
+        const scrollInitial = window.scrollY;
+        window.scrollTo(0, 0);
+        await asteptaRandare();
 
         try {
-            await html2pdf().set(opt).from(el).save();
+            await html2pdf().set(optiuniPDF('Plan_Interventie.pdf')).from(el).save();
         } catch(e) {
             toast('Eroare la export: ' + e.message, '❌');
+        } finally {
+            window.scrollTo(0, scrollInitial);
+            exportInCurs = false;
         }
 
         if (btn) { btn.textContent = '🖨️ PDF'; btn.disabled = false; }
