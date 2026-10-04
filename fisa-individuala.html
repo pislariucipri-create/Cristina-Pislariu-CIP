@@ -334,6 +334,13 @@
     let currentSessionId = null; // id sedinta activa
     let fisaRecordId = null;
 
+    // Instantaneu al ședințelor așa cum erau în baza de date la ultima încărcare/salvare.
+    // Servește la a ști ce ai modificat, adăugat sau șters TU, față de ce au făcut alții.
+    let baseline = new Map();
+    function snapshotBaseline() {
+        baseline = new Map(sessions.map(s => [s.id, JSON.stringify(s)]));
+    }
+
     function uid() { return Math.random().toString(36).substr(2, 9); }
 
     // ── INIT ──────────────────────────────────────────────────────
@@ -361,6 +368,7 @@
                 sessions = raw;
             }
         }
+        snapshotBaseline();
 
         renderSidebar();
         if (sessions.length > 0) {
@@ -486,6 +494,11 @@
 
     // ── CREARE SEDINTA NOUA ───────────────────────────────────────
     function createNewSession() {
+        // Evităm ședințele duplicate: avertizăm dacă există deja una cu data de azi
+        const azi = new Date().toISOString().split('T')[0];
+        if (sessions.some(x => x.date === azi)) {
+            if (!confirm('Există deja o ședință cu data de azi. Creezi totuși încă una?\n\nDacă ai vrut să continui ședința de azi, apasă Anulează și selecteaz-o din listă.')) return;
+        }
         // Moștenim categoriile și obiectivele din ultima ședință (fără scoruri)
         let inheritedCategories = [];
         if (sessions.length > 0) {
@@ -534,6 +547,8 @@
                 </div>`;
         }
         renderSidebar();
+        // Ștergerea se salvează imediat; altfel, la refresh ședința reapare din baza de date
+        saveData();
     }
 
     // ── RENDER MAIN ───────────────────────────────────────────────
@@ -868,6 +883,51 @@
         // Sincronizăm câmpurile editabile active
         updateSessionMeta();
 
+        // ── ÎMBINARE cu versiunea din baza de date ──────────────────
+        // Înainte de scriere citim ce există acum în baza de date și păstrăm
+        // ședințele adăugate/modificate de altcineva (psiholog sau angajat).
+        const { data: fresh, error: freshErr } = await _supabase.from('fisa_data')
+            .select('id, data').eq('patient_id', patientId).maybeSingle();
+        if (freshErr) { showToast("Nu am putut verifica datele: " + freshErr.message, "❌"); return; }
+
+        if (fresh) {
+            if (!fisaRecordId) fisaRecordId = fresh.id;
+            let remote = Array.isArray(fresh.data) ? fresh.data : [];
+            if (remote.length && remote[0].catName !== undefined) remote = []; // format vechi
+            const remoteMap = new Map(remote.map(s => [s.id, s]));
+            const localIds = new Set(sessions.map(s => s.id));
+            const merged = [];
+            let pierdute = 0;
+
+            sessions.forEach(s => {
+                const base = baseline.get(s.id);
+                const r = remoteMap.get(s.id);
+                if (!r) {
+                    if (base === undefined) merged.push(s);   // ședință nouă creată de mine
+                    else pierdute++;                          // ștearsă între timp de altcineva
+                } else {
+                    const modificataLocal = base === undefined || JSON.stringify(s) !== base;
+                    merged.push(modificataLocal ? s : r);     // nemodificată de mine → iau versiunea din bază
+                }
+            });
+            remote.forEach(r => {
+                // adăugată de altcineva și încă necunoscută aici → o păstrez
+                // (cele din baseline care lipsesc local le-am șters eu → rămân șterse)
+                if (!localIds.has(r.id) && !baseline.has(r.id)) merged.push(r);
+            });
+
+            sessions = merged;
+            if (currentSessionId && !sessions.some(s => s.id === currentSessionId)) {
+                currentSessionId = null;
+                document.getElementById('mainContent').innerHTML = `
+                    <div class="empty-state"><span class="icon">📋</span><h3>Nicio ședință selectată</h3>
+                    <p>Selectează o ședință din listă.</p></div>`;
+            }
+            if (pierdute) showToast(`${pierdute} ședință(e) fuseseră șterse între timp de altcineva.`, "ℹ️");
+            renderSidebar();
+            if (currentSessionId) { const el = document.getElementById('sitem-' + currentSessionId); if (el) el.classList.add('active'); }
+        }
+
         let result;
         if (fisaRecordId) {
             result = await _supabase.from('fisa_data')
@@ -883,6 +943,7 @@
         if (result.error) {
             showToast("Eroare la salvare: " + result.error.message, "❌");
         } else {
+            snapshotBaseline();
             // ── Trimite snapshot complet în rapoarte ──────────────
             await syncToReports();
 
